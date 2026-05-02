@@ -1,0 +1,84 @@
+/**
+ * keywordMap.js
+ *
+ * Maps broad problem categories to the keywords a student might use.
+ * Consumed by extractMatchedCategories.js to detect intent from free text.
+ *
+ * Source of truth: src/data/keywordMap.json
+ * This JS module re-exports the same data so non-TS files can import it
+ * without a bundler JSON loader, and adds the category→resource-category
+ * mapping that the scorer needs.
+ */
+
+export const keywordMap = {
+  food: [
+    "food", "hungry", "hunger", "groceries", "meal", "meals",
+    "eat", "eating", "starving", "pantry", "snacks",
+  ],
+  financial: [
+    "money", "rent", "bill", "bills", "financial", "expense", "expenses",
+    "afford", "broke", "debt", "fees", "tuition", "payment", "cash",
+    "fund", "funding",
+  ],
+  "mental-health": [
+    "stress", "stressed", "anxiety", "anxious", "depressed", "depression",
+    "overwhelmed", "panic", "burnout", "sad", "lonely", "mental", "therapy",
+    "counseling", "struggling", "hopeless", "exhausted", "crying", "upset",
+  ],
+  crisis: [
+    "crisis", "suicidal", "suicide", "unsafe", "emergency", "desperate",
+    "alone", "hurt myself", "end it", "can't go on",
+  ],
+  academic: [
+    "failing", "fail", "class", "classes", "exam", "exams", "study",
+    "studying", "homework", "assignment", "grade", "grades", "behind",
+    "tutoring", "tutor", "learning", "professor", "course", "courses",
+    "gpa", "test",
+  ],
+  advising: [
+    "advising", "advisor", "schedule", "registration", "major", "graduation",
+    "withdraw", "withdrawal", "drop", "dropping", "requirements", "units",
+    "credits",
+  ],
+  technology: [
+    "laptop", "computer", "device", "wifi", "internet", "software", "login",
+    "password", "portal", "canvas", "email", "tech", "technology", "broken",
+    "access",
+  ],
+  housing: [
+    "housing", "homeless", "homelessness", "rent", "roommate", "eviction",
+    "evicted", "stay", "shelter", "apartment", "dorm", "living",
+    "kicked out", "move out",
+  ],
+  accessibility: [
+    "disability", "disabled", "accommodation", "accommodations", "adhd",
+    "dyslexia", "accessibility", "extended time", "note taker", "mobility",
+    "hearing", "vision", "impairment",
+  ],
+  career: [
+    "interview", "job", "internship", "career", "resume", "networking",
+    "professional", "attire", "clothes", "career fair", "hire", "hiring",
+  ],
+  "basic-needs": [
+    "basic needs", "support", "resources", "help", "don't know where",
+    "not sure", "multiple", "everything", "overwhelmed", "struggling",
+  ],
+};
+
+/**
+ * Maps a detected keyword category to the resource categories it should
+ * surface. Keeps scoring decoupled from the raw keyword list.
+ */
+export const categoryToResourceCategories = {
+  food:           ["food", "basic-needs"],
+  financial:      ["financial", "basic-needs"],
+  "mental-health":["mental-health"],
+  crisis:         ["mental-health"],
+  academic:       ["academic"],
+  advising:       ["academic"],
+  technology:     ["technology"],
+  housing:        ["housing", "basic-needs"],
+  accessibility:  ["accessibility"],
+  career:         ["career"],
+  "basic-needs":  ["basic-needs", "food", "financial", "housing"],
+};
