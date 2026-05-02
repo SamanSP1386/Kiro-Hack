@@ -125,11 +125,7 @@ export default function ConstellationHero({
         <div className="fade-up delay-3 mt-10">
           <button
             type="button"
-            onClick={(e) => {
-              // Glow pulse on press, then trigger navigation
-              (e.currentTarget as HTMLButtonElement).classList.add("cta-glow");
-              onStartMatching();
-            }}
+            onClick={onStartMatching}
             className="
               group inline-flex items-center gap-2.5 rounded-full
               px-8 py-3.5 text-sm font-semibold text-white

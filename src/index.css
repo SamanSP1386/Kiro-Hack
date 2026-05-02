@@ -52,81 +52,74 @@ html, body {
 .delay-5 { animation-delay: 0.35s; }
 
 /* ════════════════════════════════════════════════════════════════════════════
-   CINEMATIC MORPH + BLUR TRANSITION
-   ─────────────────────────────────────────────────────────────────────────
-   Both views animate simultaneously over ~480ms.
-
-   OUTGOING (hero leaving / secondary leaving):
-     scale 1 → 0.96, blur 0 → 8px, opacity 1 → 0, translateY 0 → -12px
-     Easing: cubic-bezier(0.4, 0, 0.6, 1) — accelerates into depth
-
-   INCOMING (secondary entering / hero returning):
-     scale 1.04 → 1, blur 8px → 0, opacity 0 → 1, translateY 12px → 0
-     Easing: cubic-bezier(0.16, 1, 0.3, 1) — spring settle into focus
-
-   The blur-to-clear on the incoming view is the "cinematic" moment —
-   it feels like a camera pulling focus onto the new content.
+   VIEW TRANSITIONS — Instant Route + Soft Content Reveal
+   No exit animations. View changes immediately on click.
+   Only the incoming content animates: opacity 0→1, translateY 8px→0.
    ════════════════════════════════════════════════════════════════════════════ */
 
-/* ── Outgoing: hero morphs away (forward nav) ── */
-@keyframes morphOut {
-  0%   { opacity: 1;   transform: scale(1)    translateY(0);     filter: blur(0px);  }
-  100% { opacity: 0;   transform: scale(0.96) translateY(-12px); filter: blur(8px);  }
+@keyframes viewIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0);   }
 }
 
-/* ── Incoming: secondary resolves into focus (forward nav) ── */
-@keyframes morphIn {
-  0%   { opacity: 0;   transform: scale(1.04) translateY(12px);  filter: blur(8px);  }
-  65%  {                                                           filter: blur(0px);  }
-  100% { opacity: 1;   transform: scale(1)    translateY(0);      filter: blur(0px);  }
-}
-
-/* ── Outgoing: secondary morphs away (back nav) ── */
-@keyframes morphOutBack {
-  0%   { opacity: 1;   transform: scale(1)    translateY(0);     filter: blur(0px);  }
-  100% { opacity: 0;   transform: scale(0.96) translateY(12px);  filter: blur(8px);  }
-}
-
-/* ── Incoming: hero resolves into focus (back nav) ── */
-@keyframes morphInBack {
-  0%   { opacity: 0;   transform: scale(1.04) translateY(-12px); filter: blur(8px);  }
-  65%  {                                                           filter: blur(0px);  }
-  100% { opacity: 1;   transform: scale(1)    translateY(0);      filter: blur(0px);  }
-}
-
-/* ── CTA button glow pulse on press ── */
-@keyframes ctaGlow {
-  0%   { box-shadow: 0 4px 20px rgba(60,80,180,0.35); }
-  50%  { box-shadow: 0 0 40px rgba(80,120,240,0.70), 0 0 80px rgba(60,80,200,0.35); }
-  100% { box-shadow: 0 4px 20px rgba(60,80,180,0.35); }
-}
-
-/* Applied animation classes */
-.morph-out      { animation: morphOut     0.42s cubic-bezier(0.4,0,0.6,1)   forwards; }
-.morph-in       { animation: morphIn      0.48s cubic-bezier(0.16,1,0.3,1)  both;     }
-.morph-out-back { animation: morphOutBack 0.38s cubic-bezier(0.4,0,0.6,1)   forwards; }
-.morph-in-back  { animation: morphInBack  0.48s cubic-bezier(0.16,1,0.3,1)  both;     }
-
-/* CTA glow on trigger */
-.cta-glow { animation: ctaGlow 0.45s cubic-bezier(0.22,1,0.36,1) forwards; }
+.view-in      { animation: viewIn 0.22s ease-out both; }
+.view-in-back { animation: viewIn 0.22s ease-out both; }
 
 /* ════════════════════════════════════════════════════════════════════════════
-   CARD / ELEMENT REVEALS
+   SPOTLIGHT REVEAL — results area
+   ─────────────────────────────────────────────────────────────────────────
+   A soft radial spotlight fades in behind the results list.
+   Implemented as a ::before pseudo-element on .results-spotlight so it
+   never triggers layout — only opacity is animated.
+
+   Card stagger: rank 1 at 0ms, rank 2 at 70ms, rank 3 at 140ms.
+   Each card slides up 8px and fades in. Short, clean, professional.
    ════════════════════════════════════════════════════════════════════════════ */
 
-@keyframes cardReveal {
-  from { opacity: 0; transform: translateY(10px); filter: blur(2px); }
-  to   { opacity: 1; transform: translateY(0);    filter: blur(0px); }
+@keyframes spotlightFade {
+  from { opacity: 0; }
+  to   { opacity: 1; }
 }
 
-.card-reveal { animation: cardReveal 0.36s cubic-bezier(0.22,1,0.36,1) both; }
+@keyframes cardIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0);   }
+}
 
+/* Wrapper that holds the spotlight pseudo-element */
+.results-spotlight {
+  position: relative;
+}
+.results-spotlight::before {
+  content: "";
+  position: absolute;
+  inset: -40px -60px;
+  background: radial-gradient(
+    ellipse 70% 55% at 50% 30%,
+    rgba(80, 120, 220, 0.09) 0%,
+    transparent 70%
+  );
+  pointer-events: none;
+  z-index: 0;
+  animation: spotlightFade 0.35s ease-out both;
+}
+.results-spotlight > * {
+  position: relative;
+  z-index: 1;
+}
+
+/* Card reveal — used by ResourceCard via revealDelay prop */
+.card-reveal {
+  animation: cardIn 0.28s ease-out both;
+}
+
+/* Back button entrance */
 @keyframes fadeInLeft {
   from { opacity: 0; transform: translateX(-8px); }
   to   { opacity: 1; transform: translateX(0);    }
 }
 
-.back-btn-in { animation: fadeInLeft 0.26s cubic-bezier(0.22,1,0.36,1) both 0.06s; }
+.back-btn-in { animation: fadeInLeft 0.22s ease-out both 0.05s; }
 
 /* ════════════════════════════════════════════════════════════════════════════
    NEURON BACKGROUND
@@ -143,13 +136,6 @@ html, body {
 @keyframes lineShimmer {
   0%, 100% { opacity: 0.12; }
   50%       { opacity: 0.32; }
-}
-
-/* Lines pulse brighter during morph transition */
-.transitioning .n-line {
-  animation: none !important;
-  opacity: 0.45;
-  transition: opacity 0.2s ease;
 }
 
 @keyframes dotPulse {
@@ -181,14 +167,14 @@ html, body {
 
 @media (prefers-reduced-motion: reduce) {
   .page-bg, .fade-up,
-  .morph-out, .morph-in, .morph-out-back, .morph-in-back,
-  .cta-glow, .card-reveal, .back-btn-in,
+  .view-in, .view-in-back,
+  .card-reveal, .back-btn-in,
+  .results-spotlight::before,
   .orb-breathe, .neuron-svg, .n-line, .n-dot, .n-flow {
     animation: none !important;
     transition-duration: 0.01ms !important;
     opacity: 1 !important;
     transform: none !important;
-    filter: none !important;
   }
   .page-bg { background-position: 0% 0%; }
 }

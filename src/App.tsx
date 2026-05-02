@@ -119,18 +119,6 @@ function NeuronLayer() {
 
 type View = "hero" | "match" | "resources" | "support";
 
-// Cinematic Morph + Blur transition state machine
-// "idle"     — no transition in progress
-// "out"      — outgoing view is morphing away
-// "in"       — incoming view is resolving into focus
-type MorphPhase = "idle" | "out" | "in";
-type MorphDir   = "fwd" | "back";
-
-// Timing (ms) — total ~480ms
-const MORPH_OUT_MS = 200;  // outgoing view duration before swap
-const MORPH_IN_MS  = 480;  // incoming view animation duration
-const IDLE_BUFFER  = 60;   // buffer after incoming completes
-
 // ── App ───────────────────────────────────────────────────────────────────────
 
 export default function App() {
@@ -139,23 +127,19 @@ export default function App() {
   const [results,     setResults]     = useState<MatchedResource[]>([]);
   const [isFallback,  setIsFallback]  = useState(false);
   const [hasSearched, setHasSearched] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading,   setIsLoading]   = useState(false);
 
-  // View + morph state
-  const [activeView,  setActiveView]  = useState<View>("hero");
-  const [morphPhase,  setMorphPhase]  = useState<MorphPhase>("idle");
-  const [morphDir,    setMorphDir]    = useState<MorphDir>("fwd");
+  // View state — single source of truth, no transition phases
+  const [activeView, setActiveView] = useState<View>("hero");
 
   const textareaRef  = useRef<HTMLTextAreaElement>(null);
   const secondaryRef = useRef<HTMLDivElement>(null);
-  const busy         = useRef(false);
 
   async function handleSubmit() {
     if (isLoading) return;
     setIsLoading(true);
 
     try {
-      // Empty input → show fallback resources immediately
       if (!input.trim()) {
         setResults(getFallbackResources());
         setIsFallback(true);
@@ -163,20 +147,15 @@ export default function App() {
         return;
       }
 
-      // Try AI matcher first
       const aiResults = await findResourcesWithAI(input);
 
       if (aiResults && aiResults.length > 0) {
-        // AI succeeded — use its results
         setResults(aiResults);
         setIsFallback(false);
       } else if (aiResults !== null) {
-        // AI returned empty array — input wasn't campus-related
-        // Still try keyword matcher as a last resort
         const keywordResults = findResources(input);
         const allFallback = keywordResults.every((r) => r.score === 0);
         if (allFallback) {
-          // Nothing matched at all — show empty results with a message
           setResults([]);
           setIsFallback(false);
         } else {
@@ -184,7 +163,6 @@ export default function App() {
           setIsFallback(false);
         }
       } else {
-        // AI failed/unavailable — fall back to keyword matcher silently
         const keywordResults = findResources(input);
         const allFallback = keywordResults.every((r) => r.score === 0);
         setResults(keywordResults);
@@ -197,74 +175,23 @@ export default function App() {
     }
   }
 
-  // ── Cinematic Morph + Blur engine ─────────────────────────────────────────
-  //
-  // Timeline (forward, ~480ms total):
-  //   0ms       — outgoing view starts morphing out (.morph-out)
-  //               neuron lines brighten (.transitioning on body)
-  //   200ms     — view swaps; incoming view starts resolving in (.morph-in)
-  //               outgoing view is now hidden (opacity 0)
-  //   200+480ms — incoming view fully resolved, go idle
-  //
-  // Both views animate over the same background — no wipe panel needed.
-  // The blur-to-clear on the incoming view is the cinematic "focus pull".
-
-  const runMorph = useCallback((dir: MorphDir, onSwap: () => void) => {
-    if (busy.current) return;
-    busy.current = true;
-
-    document.body.classList.add("transitioning");
-    setMorphDir(dir);
-    setMorphPhase("out");
-
-    // Swap views at the morph-out midpoint
-    setTimeout(() => {
-      onSwap();
-      setMorphPhase("in");
-      document.body.classList.remove("transitioning");
-      if (secondaryRef.current) secondaryRef.current.scrollTop = 0;
-    }, MORPH_OUT_MS);
-
-    // Go idle after incoming animation completes
-    setTimeout(() => {
-      setMorphPhase("idle");
-      busy.current = false;
-    }, MORPH_OUT_MS + MORPH_IN_MS + IDLE_BUFFER);
-  }, []);
+  // ── Navigation — instant view swap, no delays ─────────────────────────────
+  // View changes immediately on click. CSS handles the content reveal.
 
   const navigateTo = useCallback((target: Exclude<View, "hero">, focusTextarea = false) => {
-    runMorph("fwd", () => {
-      setActiveView(target);
-      if (focusTextarea && target === "match") {
-        setTimeout(() => textareaRef.current?.focus(), 200);
-      }
-    });
-  }, [runMorph]);
+    setActiveView(target);
+    if (secondaryRef.current) secondaryRef.current.scrollTop = 0;
+    if (focusTextarea && target === "match") {
+      setTimeout(() => textareaRef.current?.focus(), 50);
+    }
+  }, []);
 
   const goHome = useCallback(() => {
-    runMorph("back", () => {
-      setActiveView("hero");
-    });
-  }, [runMorph]);
-
-  // ── Derived animation classes ──────────────────────────────────────────────
+    setActiveView("hero");
+  }, []);
 
   const isOnHero      = activeView === "hero";
   const isOnSecondary = !isOnHero;
-
-  // Hero layer: morphs out on fwd, morphs in on back
-  const heroClass = (() => {
-    if (morphPhase === "out"  && morphDir === "fwd")  return "morph-out";
-    if (morphPhase === "in"   && morphDir === "back") return "morph-in-back";
-    return "";
-  })();
-
-  // Secondary layer: morphs in on fwd, morphs out on back
-  const secondaryClass = (() => {
-    if (morphPhase === "in"  && morphDir === "fwd")  return "morph-in";
-    if (morphPhase === "out" && morphDir === "back") return "morph-out-back";
-    return "";
-  })();
 
   return (
     <div className="page-bg fixed inset-0 overflow-hidden" style={{ zIndex: 0 }}>
@@ -280,14 +207,12 @@ export default function App() {
       <div aria-hidden="true" className="orb-breathe pointer-events-none fixed -bottom-20 left-1/3 w-[480px] h-[480px] rounded-full"
         style={{ zIndex: 0, animationDelay: "10s", background: "radial-gradient(circle, rgba(80,50,160,0.09) 0%, transparent 65%)" }} />
 
-      {/* ── Hero layer ── */}
+      {/* ── Hero layer — always mounted, shown when active ── */}
       <div
-        className={`fixed inset-0 ${heroClass}`}
+        className="fixed inset-0"
         style={{
-          zIndex: isOnHero ? 2 : 1,
-          // Keep hero invisible (but in DOM) when secondary is fully active
-          opacity: isOnSecondary && morphPhase === "idle" ? 0 : undefined,
-          pointerEvents: isOnSecondary ? "none" : undefined,
+          zIndex: 1,
+          display: isOnHero ? undefined : "none",
         }}
         aria-hidden={isOnSecondary}
       >
@@ -299,13 +224,13 @@ export default function App() {
         />
       </div>
 
-      {/* ── Secondary layer ── */}
+      {/* ── Secondary layer — fades in when mounted ── */}
       {isOnSecondary && (
         <div
+          key={activeView}
           ref={secondaryRef}
-          className={`fixed inset-0 overflow-y-auto ${secondaryClass}`}
+          className="view-in fixed inset-0 overflow-y-auto"
           style={{ zIndex: 2 }}
-          aria-hidden={isOnHero}
         >
           {/* Match view */}
           {activeView === "match" && (

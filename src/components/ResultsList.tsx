@@ -28,7 +28,7 @@ export function ResultsList({ results, isFallback }: ResultsListProps) {
   }
 
   return (
-    <section className="w-full space-y-4" aria-label="Matched resources">
+    <section className="results-spotlight w-full space-y-4" aria-label="Matched resources">
       <h2 className="text-xs font-semibold uppercase tracking-widest" style={{ color: "#94a3b8" }}>
         {isFallback
           ? "Good places to start"
