@@ -84,6 +84,11 @@ function detectCategories(normalized: string): string[] {
 
 // ── Step 3: Score ────────────────────────────────────────────────────────────
 
+interface ScoreOutput {
+  score: number;
+  matchedTerms: string[];
+}
+
 /**
  * Scoring rules:
  *   +2  per resource tag found in the normalized input
@@ -91,14 +96,16 @@ function detectCategories(normalized: string): string[] {
  *   +1  per meaningful word from description or best_for found in input (max 3)
  *
  * A Set tracks already-counted terms to prevent double-scoring.
+ * Returns both the numeric score and the list of matched terms.
  */
 function scoreResource(
   resource: Resource,
   normalized: string,
   matchedCategories: string[]
-): number {
+): ScoreOutput {
   let score = 0;
   const seen = new Set<string>();
+  const matchedTerms: string[] = [];
 
   // Rule 1: tag hits
   for (const tag of resource.tags) {
@@ -106,6 +113,7 @@ function scoreResource(
     if (normalized.includes(t) && !seen.has(t)) {
       score += 2;
       seen.add(t);
+      matchedTerms.push(tag);
     }
   }
 
@@ -132,10 +140,11 @@ function scoreResource(
       score += 1;
       overlapPoints++;
       seen.add(word);
+      matchedTerms.push(word);
     }
   }
 
-  return score;
+  return { score, matchedTerms };
 }
 
 // ── Step 4: Format ───────────────────────────────────────────────────────────
@@ -177,7 +186,7 @@ export function getFallbackResources(): MatchedResource[] {
   return FALLBACK_RESOURCE_IDS.reduce<MatchedResource[]>((acc, id) => {
     const resource = resources.find((r) => r.id === id);
     if (resource) {
-      acc.push({ ...resource, score: 0, matchReason: FALLBACK_REASON });
+      acc.push({ ...resource, score: 0, matchedTerms: [], matchReason: FALLBACK_REASON });
     }
     return acc;
   }, []);
@@ -203,11 +212,15 @@ export function findResources(userInput: string): MatchedResource[] {
   const matchedCategories = detectCategories(normalized);
 
   const scored = resources
-    .map((resource) => ({
-      ...resource,
-      score: scoreResource(resource, normalized, matchedCategories),
-      matchReason: buildMatchReason(resource, normalized),
-    }))
+    .map((resource) => {
+      const { score, matchedTerms } = scoreResource(resource, normalized, matchedCategories);
+      return {
+        ...resource,
+        score,
+        matchedTerms,
+        matchReason: buildMatchReason(resource, normalized),
+      };
+    })
     .filter((r) => r.score > 0)
     .sort(sortResults)
     .slice(0, TOP_N);

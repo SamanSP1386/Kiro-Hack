@@ -30,5 +30,6 @@ export interface Resource {
 
 export interface MatchedResource extends Resource {
   score: number;
+  matchedTerms: string[];
   matchReason: string;
 }

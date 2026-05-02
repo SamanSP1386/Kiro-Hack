@@ -11,14 +11,10 @@
  */
 
 import { categoryToResourceCategories } from "./keywordMap";
-import type { Resource } from "./types";
+import type { MatchedResource, Resource } from "../types/resource";
 
 /** Shape returned by scoreResource. */
-export interface ScoreResult {
-  score: number;
-  matchedTerms: string[];
-  matchReason: string;
-}
+export type ScoreResult = Pick<MatchedResource, "score" | "matchedTerms" | "matchReason">;
 
 /**
  * Builds a human-readable reason string from the matched terms.
