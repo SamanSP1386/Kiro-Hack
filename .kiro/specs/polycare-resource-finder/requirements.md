@@ -53,16 +53,17 @@ PolyCare helps Cal Poly students find campus support resources by describing the
 
 ---
 
-### 4. AI-Enhanced Match Explanation (Optional Enhancement)
-**As a** student reading a match reason,  
-**I want** the explanation to feel natural and supportive,  
-**So that** it doesn't feel robotic or generic.
+### 4. AI-Enhanced Matching (Groq Integration)
+**As a** student describing their problem,  
+**I want** the app to understand natural language,  
+**So that** I get accurate results even when I don't use the exact right words.
 
 **Acceptance criteria:**
-- If OpenAI API is available, the match reason is rewritten into friendlier language
-- If the API call fails or is unavailable, the local match reason is shown instead
+- Groq API (`llama-3.3-70b-versatile`, free tier) is used as the primary matcher
+- If the input is not campus-related, the app returns an empty state message instead of forced results
+- If the API call fails or times out, the keyword matcher runs silently as fallback
 - The app never blocks or errors out due to a failed API call
-- The AI layer does not affect which resources are returned — only the explanation text
+- API key stored in `.env` as `VITE_GROQ_API_KEY` — never committed to the repo
 
 ---
 
