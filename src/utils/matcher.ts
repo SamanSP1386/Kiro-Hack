@@ -3,7 +3,7 @@ import keywordMap from "../data/keywordMap.json";
 import { FALLBACK_RESOURCE_IDS } from "../data/expectedResults";
 import type { Resource, MatchedResource } from "../types/resource";
 
-export type { Resource, MatchedResource };
+// Types are defined in src/types/resource.ts — import from there, not here.
 
 // ── Category mapping ─────────────────────────────────────────────────────────
 
@@ -102,8 +102,9 @@ function scoreResource(
 }
 
 /**
- * Builds a short human-readable reason why a resource matched, used on result
- * cards. Falls back to a generic message when no tags matched directly.
+ * Builds a warm, plain-language reason why a resource matched.
+ * Steering standard: user-facing text must be calm, supportive, and plain —
+ * not robotic or clinical.
  */
 function buildMatchReason(resource: Resource, userInput: string): string {
   const inputLower = userInput.toLowerCase();
@@ -113,11 +114,12 @@ function buildMatchReason(resource: Resource, userInput: string): string {
   );
 
   if (matchedTags.length > 0) {
-    const preview = matchedTags.slice(0, 3).join(", ");
-    return `Matched because you mentioned: ${preview}.`;
+    // Use the resource's own best_for text as the reason — it's already written
+    // in plain student language and is more reassuring than listing matched tags.
+    return resource.best_for;
   }
 
-  return "This resource may help based on your situation.";
+  return "This might be a helpful place to start given what you're going through.";
 }
 
 // ── Fallback resources ───────────────────────────────────────────────────────
@@ -125,7 +127,7 @@ function buildMatchReason(resource: Resource, userInput: string): string {
 // FALLBACK_RESOURCE_IDS is imported from expectedResults.ts — single source of truth
 
 const FALLBACK_REASON =
-  "This is a good starting point if you're not sure where to go.";
+  "This is a good place to start — they can help point you in the right direction.";
 
 // ── Public API ───────────────────────────────────────────────────────────────
 
