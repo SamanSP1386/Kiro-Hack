@@ -1,90 +1,77 @@
-# Kiro-Hack
+# PolyCare — Cal Poly Student Support Finder
 
-File structure
+Students describe a problem in plain language and get matched to the top 3 Cal Poly campus support resources, with a reason for each match and clear next steps.
 
-A simple structure:
+## How to run
 
-student-resource-matcher/
-├── public/
-├── src/
-│   ├── assets/
-│   ├── components/
-│   │   ├── Header.jsx
-│   │   ├── SearchForm.jsx
-│   │   ├── ResourceCard.jsx
-│   │   ├── ResultsList.jsx
-│   │   └── SamplePrompts.jsx
-│   ├── data/
-│   │   └── resources.json
-│   ├── utils/
-│   │   ├── keywordMap.js
-│   │   ├── matchResources.js
-│   │   └── helpers.js
-│   ├── App.jsx
-│   ├── main.jsx
-│   └── index.css
-├── package.json
-├── tailwind.config.js
-├── postcss.config.js
-└── vite.config.js
+```bash
+npm install
+npm run dev
+```
 
-If using TypeScript:
+Then open [http://localhost:5173](http://localhost:5173) in your browser.
 
-components/*.tsx
-utils/*.ts
-App.tsx
-main.tsx
-What each file does
-src/data/resources.json
+## How to run backend tests
 
-Your mock resource dataset.
+```bash
+# Match quality test (7 prompts vs expected results)
+npm run test:match
 
-src/utils/keywordMap.js
+# Dataset integrity validation (unique IDs, valid categories, etc.)
+npm run test:validate
+```
 
-Maps student words to categories.
+## Manual test checklist
 
-Example:
+After `npm run dev`, verify these in the browser:
 
-export const keywordMap = {
-  food: ["food", "hungry", "groceries", "meal", "eat"],
-  financial: ["money", "rent", "bill", "expense", "broke"],
-  "mental-health": ["stress", "anxiety", "overwhelmed", "panic", "depressed"],
-  academic: ["failing", "class", "homework", "study", "exam", "grade"],
-  technology: ["laptop", "computer", "wifi", "device", "login"],
-  housing: ["housing", "rent", "eviction", "roommate", "homeless"],
-  accessibility: ["accommodation", "disability", "adhd", "accessibility"],
-  career: ["interview", "resume", "internship", "job"]
-};
-src/utils/matchResources.js
+| Prompt | Expected top result |
+|---|---|
+| "I don't have money for groceries this week." | Campus Food Pantry |
+| "My laptop broke and I have homework due tomorrow." | Laptop and Technology Loan Program |
+| "I'm overwhelmed and falling behind in class." | Counseling and Psychological Services |
+| "I might lose housing next month." | Student Housing Support Services |
+| "I need interview clothes for a career fair." | Career Closet and Professional Prep |
+| "I think I need accommodations but I don't know where to start." | Disability Resource Center |
+| "I don't know what to do anymore." | Fallback resources (Basic Needs, Advising, Counseling) |
+| *(empty input + Find Support)* | Fallback resources |
 
-Main matching logic.
+Also verify:
+- Sample prompt chips fill the textarea and trigger search automatically
+- Each result card shows: name, category, urgency, match reason, what to do first, what to bring, score, matched terms
+- Results header says "Here are some good places to start" for fallbacks
 
-Responsibilities:
+## Tech stack
 
-normalize user text
-score each resource
-sort by score
-return top 3
-src/components/SearchForm.jsx
+- React 18 + TypeScript
+- Vite
+- Tailwind CSS
+- Local keyword/tag matching (no backend, no API)
 
-Text area + button.
+## Project structure
 
-src/components/ResultsList.jsx
+```
+src/
+├── types/resource.ts           # Shared Resource, MatchedResource types
+├── data/
+│   ├── resources.ts            # 12 typed Cal Poly campus resources
+│   ├── keywordMap.json         # Plain-language words → categories
+│   └── expectedResults.ts      # Test prompts + fallback IDs
+├── utils/
+│   ├── matcher.ts              # findResources(), getFallbackResources()
+│   ├── normalizeText.ts        # Input normalization
+│   ├── extractMatchedCategories.ts
+│   ├── scoreResource.ts
+│   ├── formatMatchedResult.ts
+│   └── keywordMap.ts
+├── components/
+│   ├── SearchForm.tsx          # Textarea + sample prompts + submit
+│   ├── ResultsList.tsx         # Results container
+│   └── ResourceCard.tsx        # Individual result card
+├── App.tsx                     # Root component + state
+└── main.tsx                    # React entry point
+```
 
-Maps matched results into cards.
+## License
 
-src/components/ResourceCard.jsx
-
-Displays each result.
-
-src/components/SamplePrompts.jsx
-
-Clickable example prompts for demo.
-
-src/App.jsx
-
-Holds state:
-
-input text
-matched results
-loading state if needed
+MIT
