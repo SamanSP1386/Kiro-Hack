@@ -1,0 +1,13 @@
+{
+  "name": "Run Match Tests on Data Change",
+  "version": "1.0.0",
+  "description": "Runs the match quality test script whenever resources.ts or keywordMap.json is edited, so Dev A can immediately see if a tag change improved or broke match results.",
+  "when": {
+    "type": "fileEdited",
+    "patterns": ["src/data/resources.ts", "src/data/keywordMap.json"]
+  },
+  "then": {
+    "type": "runCommand",
+    "command": "npx tsx src/test/runMatchTests.ts"
+  }
+}

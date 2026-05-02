@@ -1,0 +1,13 @@
+{
+  "name": "Type Check on Save",
+  "version": "1.0.0",
+  "description": "Runs TypeScript type checking whenever a .ts or .tsx file is saved, catching type errors before they reach the browser.",
+  "when": {
+    "type": "fileEdited",
+    "patterns": ["src/**/*.ts", "src/**/*.tsx"]
+  },
+  "then": {
+    "type": "runCommand",
+    "command": "npx tsc --noEmit"
+  }
+}
