@@ -1,3 +1,65 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* ── Animated background gradient ─────────────────────────────────────────── */
+
+@keyframes gradientShift {
+  0%   { background-position: 0% 50%;   }
+  50%  { background-position: 100% 50%; }
+  100% { background-position: 0% 50%;   }
+}
+
+@keyframes heroFadeUp {
+  from { opacity: 0; transform: translateY(18px); }
+  to   { opacity: 1; transform: translateY(0);    }
+}
+
+@keyframes heroPulse {
+  0%, 100% { opacity: 0.5; transform: scale(1);    }
+  50%       { opacity: 0.8; transform: scale(1.06); }
+}
+
+@keyframes floatNode {
+  0%, 100% { transform: translate(-50%, -50%) translateY(0px);  }
+  50%       { transform: translate(-50%, -50%) translateY(-5px); }
+}
+
+@keyframes cardReveal {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0);    }
+}
+
+.animated-bg {
+  background: linear-gradient(
+    135deg,
+    #0a0f1e 0%,
+    #0d1b3e 25%,
+    #1a1040 50%,
+    #0f172a 75%,
+    #0a0f1e 100%
+  );
+  background-size: 300% 300%;
+  animation: gradientShift 18s ease infinite;
+}
+
+.hero-fade-up  { animation: heroFadeUp 0.7s ease both; }
+.delay-100     { animation-delay: 0.1s; }
+.delay-200     { animation-delay: 0.2s; }
+.delay-300     { animation-delay: 0.3s; }
+.delay-400     { animation-delay: 0.4s; }
+.delay-500     { animation-delay: 0.5s; }
+.orb-pulse     { animation: heroPulse 6s ease-in-out infinite; }
+.card-reveal   { animation: cardReveal 0.45s ease both; }
+
+/* ── Respect reduced motion ────────────────────────────────────────────────── */
+
+@media (prefers-reduced-motion: reduce) {
+  .animated-bg   { animation: none; background-position: 0% 50%; }
+  .hero-fade-up  { animation: none; opacity: 1; transform: none; }
+  .orb-pulse     { animation: none; opacity: 0.6; }
+  .card-reveal   { animation: none; opacity: 1; transform: none; }
+  .animate-ping  { animation: none; }
+  .animate-bounce { animation: none; }
+  * { transition-duration: 0.01ms !important; }
+}
