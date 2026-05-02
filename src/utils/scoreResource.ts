@@ -1,5 +1,5 @@
 /**
- * scoreResource.js
+ * scoreResource.ts
  *
  * Scores a single resource object against the normalized user input and the
  * list of matched categories produced by extractMatchedCategories().
@@ -10,21 +10,26 @@
  *   +2  urgency boost when input sounds urgent AND resource.urgency === "high"
  */
 
-import { categoryToResourceCategories } from "./keywordMap.js";
+import { categoryToResourceCategories } from "./keywordMap";
+import type { Resource } from "./types";
 
 /** Words that signal the student needs help right now. */
-const URGENT_WORDS = [
+const URGENT_WORDS: string[] = [
   "urgent", "emergency", "now", "today", "immediately", "asap",
   "crisis", "desperate", "can't", "cannot",
 ];
 
 /**
- * @param {object} resource         - A resource entry from resources.json
- * @param {string} normalizedInput  - Output of normalizeText()
- * @param {string[]} matchedCategories - Output of extractMatchedCategories()
- * @returns {number} Relevance score (0 = no match)
+ * @param resource          - A resource entry from resources.json
+ * @param normalizedInput   - Output of normalizeText()
+ * @param matchedCategories - Output of extractMatchedCategories()
+ * @returns Relevance score (0 = no match)
  */
-export function scoreResource(resource, normalizedInput, matchedCategories) {
+export function scoreResource(
+  resource: Resource,
+  normalizedInput: string,
+  matchedCategories: string[]
+): number {
   let score = 0;
 
   // Direct tag hits

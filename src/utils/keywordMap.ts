@@ -1,16 +1,11 @@
 /**
- * keywordMap.js
+ * keywordMap.ts
  *
  * Maps broad problem categories to the keywords a student might use.
- * Consumed by extractMatchedCategories.js to detect intent from free text.
- *
- * Source of truth: src/data/keywordMap.json
- * This JS module re-exports the same data so non-TS files can import it
- * without a bundler JSON loader, and adds the category→resource-category
- * mapping that the scorer needs.
+ * Consumed by extractMatchedCategories.ts to detect intent from free text.
  */
 
-export const keywordMap = {
+export const keywordMap: Record<string, string[]> = {
   food: [
     "food", "hungry", "hunger", "groceries", "meal", "meals",
     "eat", "eating", "starving", "pantry", "snacks",
@@ -69,16 +64,16 @@ export const keywordMap = {
  * Maps a detected keyword category to the resource categories it should
  * surface. Keeps scoring decoupled from the raw keyword list.
  */
-export const categoryToResourceCategories = {
-  food:           ["food", "basic-needs"],
-  financial:      ["financial", "basic-needs"],
-  "mental-health":["mental-health"],
-  crisis:         ["mental-health"],
-  academic:       ["academic"],
-  advising:       ["academic"],
-  technology:     ["technology"],
-  housing:        ["housing", "basic-needs"],
-  accessibility:  ["accessibility"],
-  career:         ["career"],
-  "basic-needs":  ["basic-needs", "food", "financial", "housing"],
+export const categoryToResourceCategories: Record<string, string[]> = {
+  food:            ["food", "basic-needs"],
+  financial:       ["financial", "basic-needs"],
+  "mental-health": ["mental-health"],
+  crisis:          ["mental-health"],
+  academic:        ["academic"],
+  advising:        ["academic"],
+  technology:      ["technology"],
+  housing:         ["housing", "basic-needs"],
+  accessibility:   ["accessibility"],
+  career:          ["career"],
+  "basic-needs":   ["basic-needs", "food", "financial", "housing"],
 };

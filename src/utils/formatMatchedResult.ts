@@ -1,18 +1,16 @@
 /**
- * formatMatchedResult.js
+ * formatMatchedResult.ts
  *
  * Takes a resource object + its score and returns a MatchedResult — the shape
  * the UI expects, with a human-readable matchReason appended.
  */
 
+import type { Resource, MatchedResult } from "./types";
+
 /**
  * Builds a short explanation of why this resource was returned.
- *
- * @param {object} resource        - A resource entry from resources.json
- * @param {string} normalizedInput - Output of normalizeText()
- * @returns {string}
  */
-function buildMatchReason(resource, normalizedInput) {
+function buildMatchReason(resource: Resource, normalizedInput: string): string {
   const matchedTags = (resource.tags ?? []).filter((tag) =>
     normalizedInput.includes(tag.toLowerCase())
   );
@@ -26,12 +24,16 @@ function buildMatchReason(resource, normalizedInput) {
 }
 
 /**
- * @param {object} resource        - A resource entry from resources.json
- * @param {number} score           - Score from scoreResource()
- * @param {string} normalizedInput - Output of normalizeText()
- * @returns {object} MatchedResult with all resource fields + score + matchReason
+ * @param resource        - A resource entry from resources.json
+ * @param score           - Score from scoreResource()
+ * @param normalizedInput - Output of normalizeText()
+ * @returns MatchedResult with all resource fields + score + matchReason
  */
-export function formatMatchedResult(resource, score, normalizedInput) {
+export function formatMatchedResult(
+  resource: Resource,
+  score: number,
+  normalizedInput: string
+): MatchedResult {
   return {
     ...resource,
     score,
