@@ -140,11 +140,30 @@ function buildMatchReason(resource: Resource, userInput: string): string {
   return "This resource may help based on your situation.";
 }
 
+// ── Fallback resources ───────────────────────────────────────────────────────
+
+/**
+ * IDs of the three safest fallback resources shown when no strong match is
+ * found. Chosen because they cover the widest range of student needs.
+ * Order matters — first is shown most prominently.
+ */
+const FALLBACK_RESOURCE_IDS = [
+  "basic-needs-office",
+  "academic-advising",
+  "counseling-services",
+] as const;
+
+const FALLBACK_REASON =
+  "This is a good starting point if you're not sure where to go.";
+
 // ── Public API ───────────────────────────────────────────────────────────────
 
 /**
  * Takes a plain-text student problem description and returns the top N
  * matching campus resources, sorted by relevance score (highest first).
+ *
+ * Falls back to the three default resources (Basic Needs Office, Academic
+ * Advising, Counseling Services) when no resource scores above zero.
  *
  * @param userInput - The student's free-text problem description
  * @param topN      - Maximum number of results to return (default 3)
@@ -153,12 +172,12 @@ export function findResources(
   userInput: string,
   topN: number = 3
 ): MatchedResource[] {
-  if (!userInput || userInput.trim().length === 0) return [];
+  if (!userInput || userInput.trim().length === 0) return getFallbackResources();
 
   const inputLower = userInput.toLowerCase();
   const matchedCategories = detectCategories(inputLower);
 
-  return (resources as Resource[])
+  const scored = (resources as Resource[])
     .map((resource) => ({
       ...resource,
       score: scoreResource(resource, inputLower, matchedCategories),
@@ -167,4 +186,20 @@ export function findResources(
     .filter((r) => r.score > 0)
     .sort((a, b) => b.score - a.score)
     .slice(0, topN);
+
+  return scored.length > 0 ? scored : getFallbackResources();
+}
+
+/**
+ * Returns the three default fallback resources with a generic match reason.
+ * Used when the user's input doesn't match any resource tags or categories.
+ */
+export function getFallbackResources(): MatchedResource[] {
+  return FALLBACK_RESOURCE_IDS.reduce<MatchedResource[]>((acc, id) => {
+    const resource = (resources as Resource[]).find((r) => r.id === id);
+    if (resource) {
+      acc.push({ ...resource, score: 0, matchReason: FALLBACK_REASON });
+    }
+    return acc;
+  }, []);
 }
