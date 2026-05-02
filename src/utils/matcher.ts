@@ -26,7 +26,7 @@ import type { Resource, MatchedResource, ResourceCategory } from "../types/resou
 const TOP_N = 3;
 
 const FALLBACK_REASON =
-  "This is a good place to start — they can help point you in the right direction.";
+  "This is a good place to start. They can help point you in the right direction.";
 
 /**
  * Maps a detected keyword category to the resource categories it should

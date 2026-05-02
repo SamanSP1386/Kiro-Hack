@@ -42,7 +42,7 @@ function check(label: string, condition: boolean, detail?: string): void {
     console.log(`  ✅ ${label}`);
     passed++;
   } else {
-    console.log(`  ❌ ${label}${detail ? ` — ${detail}` : ""}`);
+    console.log(`  ❌ ${label}${detail ? `: ${detail}` : ""}`);
     failed++;
   }
 }

@@ -85,7 +85,7 @@ export async function findResourcesWithAI(
   const apiKey = import.meta.env.VITE_GROQ_API_KEY as string | undefined;
 
   if (!apiKey) {
-    console.warn("[aiMatcher] No VITE_GROQ_API_KEY found — falling back to keyword matcher");
+    console.warn("[aiMatcher] No VITE_GROQ_API_KEY found, falling back to keyword matcher");
     return null;
   }
 
@@ -138,7 +138,7 @@ export async function findResourcesWithAI(
 
     // Empty matches = AI decided input isn't campus-related → fall back to keyword matcher
     if (parsed.matches.length === 0) {
-      console.log("[aiMatcher] AI returned no matches — input not campus-related");
+      console.log("[aiMatcher] AI returned no matches, input not campus-related");
       return null;
     }
 

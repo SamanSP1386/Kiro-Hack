@@ -14,7 +14,7 @@ const STEPS = [
   {
     num: "01",
     title: "Describe your situation",
-    body: "Type what's going on in your own words. There's no wrong way to say it — use everyday language, not official terms.",
+    body: "Type what's going on in your own words. There's no wrong way to say it. Use everyday language, not official terms.",
   },
   {
     num: "02",
