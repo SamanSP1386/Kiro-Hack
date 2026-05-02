@@ -1,29 +1,9 @@
-import resources from "../data/resources.json";
+import { resources } from "../data/resources";
 import keywordMap from "../data/keywordMap.json";
+import { FALLBACK_RESOURCE_IDS } from "../data/expectedResults";
+import type { Resource, MatchedResource } from "../types/resource";
 
-// ── Types ────────────────────────────────────────────────────────────────────
-
-export interface Resource {
-  id: string;
-  name: string;
-  category: string;
-  tags: string[];
-  description: string;
-  best_for: string;
-  urgency: "high" | "medium" | "low";
-  what_to_do_first: string;
-  what_to_prepare: string[];
-  appointment_required: boolean;
-  contact_method: string;
-  hours: string;
-  location: string;
-  backup_options: string[];
-}
-
-export interface MatchedResource extends Resource {
-  score: number;
-  matchReason: string;
-}
+export type { Resource, MatchedResource };
 
 // ── Category mapping ─────────────────────────────────────────────────────────
 
@@ -142,16 +122,7 @@ function buildMatchReason(resource: Resource, userInput: string): string {
 
 // ── Fallback resources ───────────────────────────────────────────────────────
 
-/**
- * IDs of the three safest fallback resources shown when no strong match is
- * found. Chosen because they cover the widest range of student needs.
- * Order matters — first is shown most prominently.
- */
-const FALLBACK_RESOURCE_IDS = [
-  "basic-needs-office",
-  "academic-advising",
-  "counseling-services",
-] as const;
+// FALLBACK_RESOURCE_IDS is imported from expectedResults.ts — single source of truth
 
 const FALLBACK_REASON =
   "This is a good starting point if you're not sure where to go.";
@@ -177,7 +148,7 @@ export function findResources(
   const inputLower = userInput.toLowerCase();
   const matchedCategories = detectCategories(inputLower);
 
-  const scored = (resources as Resource[])
+  const scored = resources
     .map((resource) => ({
       ...resource,
       score: scoreResource(resource, inputLower, matchedCategories),
@@ -196,7 +167,7 @@ export function findResources(
  */
 export function getFallbackResources(): MatchedResource[] {
   return FALLBACK_RESOURCE_IDS.reduce<MatchedResource[]>((acc, id) => {
-    const resource = (resources as Resource[]).find((r) => r.id === id);
+    const resource = resources.find((r) => r.id === id);
     if (resource) {
       acc.push({ ...resource, score: 0, matchReason: FALLBACK_REASON });
     }
