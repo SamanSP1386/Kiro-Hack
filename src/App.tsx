@@ -427,7 +427,7 @@ export default function App() {
                 {/* Results */}
                 {hasSearched && !isLoading && (
                   <div className="mt-8 pb-4">
-                    <ResultsList results={results} isFallback={isFallback} />
+                    <ResultsList results={results} isFallback={isFallback} userInput={input} />
                   </div>
                 )}
                 </div>

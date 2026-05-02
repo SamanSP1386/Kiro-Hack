@@ -4,9 +4,10 @@ import { ResourceCard } from "./ResourceCard";
 interface ResultsListProps {
   results: MatchedResource[];
   isFallback: boolean;
+  userInput?: string;
 }
 
-export function ResultsList({ results, isFallback }: ResultsListProps) {
+export function ResultsList({ results, isFallback, userInput = "" }: ResultsListProps) {
   // Empty results = input wasn't campus-related
   if (results.length === 0) {
     return (
@@ -41,6 +42,7 @@ export function ResultsList({ results, isFallback }: ResultsListProps) {
             resource={resource}
             rank={i + 1}
             revealDelay={i * 80}
+            userInput={userInput}
           />
         ))}
       </div>

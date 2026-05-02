@@ -25,6 +25,7 @@ export interface Resource {
   contact_method: string;
   hours: string;
   location: string;
+  link: string;
   backup_options: string[];
 }
 
