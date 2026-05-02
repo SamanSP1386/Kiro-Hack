@@ -55,6 +55,7 @@ export const expectedMatchTests: ExpectedMatchTest[] = [
     expectedTopResults: [
       "Disability Resource Center",
       "Academic Advising",
+      "Basic Needs Office",
     ],
   },
   {

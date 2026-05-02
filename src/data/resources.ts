@@ -81,7 +81,6 @@ export const resources: Resource[] = [
       "cant pay rent",
       "emergency funding",
       "fees",
-      "broke",
       "no money",
       "cant afford",
       "tuition",
@@ -244,7 +243,6 @@ export const resources: Resource[] = [
       "dropping class",
       "drop",
       "failing",
-      "dont know what to do",   // normalizer strips apostrophes
       "academic standing",
       "dont know where to start", // fires on accommodations prompt
       "not sure what to do",
@@ -431,6 +429,10 @@ export const resources: Resource[] = [
       "password",
       "software",
       "computer issue",
+      "laptop broke",
+      "computer broke",
+      "homework due",
+      "homework due tomorrow",
       "tech support",
       "access problem",
       "canvas",
