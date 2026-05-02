@@ -1,12 +1,15 @@
 /**
  * ConstellationHero.tsx
  *
- * Cinematic full-screen hero section for PolyCare.
- * Self-contained — no external images, no external libraries.
- * Tailwind CSS + global CSS classes from index.css.
+ * Full-screen hero for PolyCare.
+ * Sits at the top of the single continuous page.
+ * isExiting → triggers heroExit animation before search section reveals.
  */
 
-// ── Nav links ────────────────────────────────────────────────────────────────
+interface ConstellationHeroProps {
+  onStartMatching: () => void;
+  isExiting: boolean;
+}
 
 const NAV_LINKS = [
   { label: "How it works", href: "#how-it-works" },
@@ -14,15 +17,8 @@ const NAV_LINKS = [
   { label: "Support",      href: "#support"      },
 ] as const;
 
-// ── Resource pills ───────────────────────────────────────────────────────────
-
-interface ResourcePill {
-  id: string;
-  icon: string;
-  label: string;
-}
-
-const RESOURCE_PILLS: ResourcePill[] = [
+interface Pill { id: string; icon: string; label: string; }
+const PILLS: Pill[] = [
   { id: "food",      icon: "🌾", label: "Food"          },
   { id: "housing",   icon: "🏡", label: "Housing"       },
   { id: "tutoring",  icon: "📖", label: "Tutoring"      },
@@ -31,93 +27,67 @@ const RESOURCE_PILLS: ResourcePill[] = [
   { id: "emergency", icon: "🤝", label: "Emergency Aid" },
 ];
 
-// ── Scroll helper ────────────────────────────────────────────────────────────
-
-function scrollToSearch() {
-  const el = document.getElementById("search-section");
-  if (el) el.scrollIntoView({ behavior: "smooth" });
-}
-
-// ── Component ────────────────────────────────────────────────────────────────
-
-export default function ConstellationHero() {
+export default function ConstellationHero({ onStartMatching, isExiting }: ConstellationHeroProps) {
   return (
     <section
       aria-label="PolyCare hero"
-      className="animated-bg relative min-h-screen w-full flex flex-col overflow-hidden"
+      className={`relative min-h-screen w-full flex flex-col overflow-hidden
+        ${isExiting ? "hero-exiting pointer-events-none" : ""}`}
     >
-      {/* ── Ambient orbs ── */}
-      <div
-        aria-hidden="true"
-        className="orb-pulse pointer-events-none absolute -top-32 -left-32 w-[520px] h-[520px] rounded-full"
-        style={{
-          background:
-            "radial-gradient(circle, rgba(99,102,241,0.18) 0%, transparent 70%)",
-        }}
-      />
-      <div
-        aria-hidden="true"
-        className="orb-pulse pointer-events-none absolute -bottom-40 -right-20 w-[480px] h-[480px] rounded-full"
-        style={{
-          animationDelay: "3s",
-          background:
-            "radial-gradient(circle, rgba(59,130,246,0.14) 0%, transparent 70%)",
-        }}
-      />
-      <div
-        aria-hidden="true"
-        className="pointer-events-none absolute inset-0"
-        style={{
-          background:
-            "radial-gradient(ellipse at 50% 60%, rgba(99,102,241,0.07) 0%, transparent 65%)",
-        }}
-      />
-
-      {/* ── Navigation ── */}
+      {/* ── Nav ── */}
       <nav
         aria-label="Main navigation"
         className="relative z-10 flex items-center justify-between px-6 py-5 sm:px-10 lg:px-16"
       >
-        <a
-          href="#"
-          className="text-xl font-bold tracking-tight text-white rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent"
-        >
-          Poly<span className="text-blue-400">Care</span>
-        </a>
+        <span className="text-xl font-extrabold tracking-tight text-white select-none">
+          Poly<span style={{ color: "#60a5fa" }}>Care</span>
+        </span>
 
         <ul className="hidden sm:flex items-center gap-1" role="list">
           {NAV_LINKS.map((link) => (
             <li key={link.href}>
               <a
                 href={link.href}
-                className="px-4 py-2 rounded-lg text-sm font-medium text-white/70 transition-colors duration-200 hover:text-white hover:bg-white/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-400"
+                className="px-4 py-2 rounded-lg text-sm font-medium text-white/60
+                  transition-colors duration-200
+                  hover:text-white hover:bg-white/[0.08]
+                  focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-400"
               >
                 {link.label}
               </a>
             </li>
           ))}
         </ul>
-
-        <span className="sm:hidden text-white/50 text-sm" aria-hidden="true">
-          Menu
-        </span>
       </nav>
 
       {/* ── Hero body ── */}
-      <div className="relative z-10 flex flex-1 flex-col items-center justify-center px-6 pb-20 pt-8 text-center">
+      <div className="relative z-10 flex flex-1 flex-col items-center justify-center px-6 pb-24 pt-6 text-center">
 
         {/* Eyebrow */}
-        <div className="hero-fade-up mb-6 inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-4 py-1.5 text-xs font-semibold uppercase tracking-widest text-blue-200 backdrop-blur-sm">
-          <span aria-hidden="true" className="inline-block w-1.5 h-1.5 rounded-full bg-blue-400" />
+        <div
+          className="fade-up mb-7 inline-flex items-center gap-2 rounded-full px-4 py-1.5
+            text-xs font-semibold uppercase tracking-[0.18em]
+            border border-white/[0.12] bg-white/[0.07] backdrop-blur-sm"
+          style={{ color: "#93c5fd" }}
+        >
+          <span aria-hidden="true" className="w-1.5 h-1.5 rounded-full bg-blue-400 inline-block" />
           Cal Poly Student Support
         </div>
 
         {/* Headline */}
-        <h1 className="hero-fade-up delay-100 max-w-3xl text-4xl font-bold leading-[1.1] tracking-tight text-white sm:text-5xl lg:text-6xl">
+        <h1
+          className="fade-up delay-1 max-w-3xl text-white"
+          style={{
+            fontSize: "clamp(2.5rem, 6.5vw, 4.2rem)",
+            fontWeight: 900,
+            lineHeight: 1.04,
+            letterSpacing: "-0.035em",
+          }}
+        >
           Find the right campus{" "}
           <span
             style={{
-              background: "linear-gradient(90deg, #93c5fd, #a5b4fc)",
+              background: "linear-gradient(100deg, #60a5fa 0%, #818cf8 45%, #c084fc 100%)",
               WebkitBackgroundClip: "text",
               WebkitTextFillColor: "transparent",
               backgroundClip: "text",
@@ -125,71 +95,73 @@ export default function ConstellationHero() {
           >
             support
           </span>
-          , faster.
+          {", "}
+          <span style={{ color: "#e2e8f0" }}>faster.</span>
         </h1>
 
         {/* Subtext */}
-        <p className="hero-fade-up delay-200 mt-6 max-w-xl text-base leading-relaxed text-white/65 sm:text-lg">
-          Describe what you're going through — in your own words. PolyCare
-          matches you with the campus resources that can actually help, from
-          food and housing to mental health and emergency aid.
+        <p
+          className="fade-up delay-2 mt-7 max-w-lg leading-[1.8] sm:text-lg"
+          style={{ fontSize: "clamp(0.95rem, 2vw, 1.1rem)", color: "#94a3b8" }}
+        >
+          Describe what you're going through — in your own words.{" "}
+          <span style={{ color: "#e2e8f0", fontWeight: 500 }}>PolyCare</span>{" "}
+          matches you with the campus resources that can actually help.
         </p>
 
-        {/* CTA buttons */}
-        <div className="hero-fade-up delay-300 mt-10 flex flex-col items-center gap-3 sm:flex-row sm:gap-4">
+        {/* Single CTA */}
+        <div className="fade-up delay-3 mt-11">
           <button
             type="button"
-            onClick={scrollToSearch}
+            onClick={onStartMatching}
             className="
-              group inline-flex items-center gap-2 rounded-full
-              bg-blue-500 px-7 py-3 text-sm font-semibold text-white
-              shadow-lg shadow-blue-900/40
-              transition-all duration-200
-              hover:bg-blue-400 hover:-translate-y-0.5 hover:shadow-xl hover:shadow-blue-900/50
-              active:translate-y-0 active:scale-95 active:shadow-md
-              focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-300 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950
+              group inline-flex items-center gap-2.5 rounded-full
+              px-8 py-3.5 text-sm font-semibold text-white
+              transition-all duration-[220ms] cubic-bezier(0.22,1,0.36,1)
+              focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-300
+              focus-visible:ring-offset-2 focus-visible:ring-offset-transparent
+              hover:-translate-y-[3px] active:translate-y-0 active:scale-[0.97]
             "
+            style={{
+              background: "linear-gradient(135deg, #3b82f6 0%, #6366f1 100%)",
+              boxShadow: "0 4px 24px rgba(99,102,241,0.45), 0 1px 4px rgba(0,0,0,0.3)",
+            }}
+            onMouseEnter={(e) => {
+              (e.currentTarget as HTMLButtonElement).style.boxShadow =
+                "0 8px 32px rgba(99,102,241,0.60), 0 2px 8px rgba(0,0,0,0.3)";
+            }}
+            onMouseLeave={(e) => {
+              (e.currentTarget as HTMLButtonElement).style.boxShadow =
+                "0 4px 24px rgba(99,102,241,0.45), 0 1px 4px rgba(0,0,0,0.3)";
+            }}
           >
             Start matching
             <svg
-              width="14" height="14" viewBox="0 0 14 14" fill="none"
+              width="15" height="15" viewBox="0 0 15 15" fill="none"
               aria-hidden="true"
-              className="transition-transform duration-200 group-hover:translate-x-0.5"
+              className="transition-transform duration-200 group-hover:translate-x-1"
             >
-              <path
-                d="M2 7h10M8 3l4 4-4 4"
+              <path d="M2.5 7.5h10M9 3.5l4 4-4 4"
                 stroke="currentColor" strokeWidth="1.8"
-                strokeLinecap="round" strokeLinejoin="round"
-              />
+                strokeLinecap="round" strokeLinejoin="round" />
             </svg>
-          </button>
-
-          <button
-            type="button"
-            onClick={scrollToSearch}
-            className="
-              inline-flex items-center gap-2 rounded-full
-              border border-white/20 bg-white/10 px-7 py-3
-              text-sm font-semibold text-white/85 backdrop-blur-sm
-              transition-all duration-200
-              hover:bg-white/20 hover:text-white hover:-translate-y-0.5 hover:border-white/30
-              active:translate-y-0 active:scale-95
-              focus:outline-none focus-visible:ring-2 focus-visible:ring-white/40 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950
-            "
-          >
-            Explore support
           </button>
         </div>
 
         {/* Resource pills */}
         <div
-          className="hero-fade-up delay-400 mt-14 flex flex-wrap justify-center gap-2"
+          className="fade-up delay-4 mt-14 flex flex-wrap justify-center gap-2"
           aria-label="Supported resource types"
         >
-          {RESOURCE_PILLS.map((pill) => (
+          {PILLS.map((pill) => (
             <span
               key={pill.id}
-              className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.06] px-3 py-1.5 text-xs font-medium text-white/55 backdrop-blur-sm transition-colors duration-150 hover:bg-white/10 hover:text-white/80"
+              className="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5
+                text-xs font-medium backdrop-blur-sm
+                border border-white/[0.09] bg-white/[0.05]
+                transition-colors duration-150
+                hover:bg-white/[0.10] hover:border-white/[0.15]"
+              style={{ color: "#94a3b8" }}
             >
               <span aria-hidden="true">{pill.icon}</span>
               {pill.label}
@@ -198,23 +170,16 @@ export default function ConstellationHero() {
         </div>
 
         {/* Scroll cue */}
-        <div className="hero-fade-up delay-500 mt-16 flex flex-col items-center gap-2" aria-hidden="true">
-          <span className="text-xs text-white/30 tracking-widest uppercase">Scroll</span>
-          <svg width="16" height="20" viewBox="0 0 16 20" fill="none" className="text-white/25">
+        <div className="fade-up delay-5 mt-16 flex flex-col items-center gap-2" aria-hidden="true">
+          <span className="text-[10px] tracking-[0.22em] uppercase" style={{ color: "rgba(148,163,184,0.4)" }}>
+            Scroll
+          </span>
+          <svg width="16" height="20" viewBox="0 0 16 20" fill="none" style={{ color: "rgba(148,163,184,0.3)" }}>
             <rect x="1" y="1" width="14" height="18" rx="7" stroke="currentColor" strokeWidth="1.2" />
-            <circle cx="8" cy="6" r="2" fill="currentColor" className="animate-bounce" />
+            <circle cx="8" cy="6" r="2" fill="currentColor" />
           </svg>
         </div>
       </div>
-
-      {/* Bottom fade */}
-      <div
-        aria-hidden="true"
-        className="pointer-events-none absolute bottom-0 left-0 right-0 h-32"
-        style={{
-          background: "linear-gradient(to bottom, transparent, rgba(10,15,30,0.6))",
-        }}
-      />
     </section>
   );
 }
