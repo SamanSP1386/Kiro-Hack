@@ -1,42 +1,28 @@
 /**
  * formatMatchedResult.ts
  *
- * Takes a resource object + its score and returns a MatchedResult — the shape
- * the UI expects, with a human-readable matchReason appended.
+ * Combines a raw resource object with the ScoreResult from scoreResource()
+ * to produce a MatchedResult ready for the UI.
+ *
+ * Does not generate its own matchReason — scoreResource already provides it.
  */
 
 import type { Resource, MatchedResult } from "./types";
+import type { ScoreResult } from "./scoreResource";
 
 /**
- * Builds a short explanation of why this resource was returned.
- */
-function buildMatchReason(resource: Resource, normalizedInput: string): string {
-  const matchedTags = (resource.tags ?? []).filter((tag) =>
-    normalizedInput.includes(tag.toLowerCase())
-  );
-
-  if (matchedTags.length > 0) {
-    const preview = matchedTags.slice(0, 3).join(", ");
-    return `Matched because you mentioned: ${preview}.`;
-  }
-
-  return "This resource may help based on your situation.";
-}
-
-/**
- * @param resource        - A resource entry from resources.json
- * @param score           - Score from scoreResource()
- * @param normalizedInput - Output of normalizeText()
- * @returns MatchedResult with all resource fields + score + matchReason
+ * @param resource    - A resource entry from resources.json
+ * @param scoreResult - The full ScoreResult returned by scoreResource()
+ * @returns MatchedResult with all resource fields + score + matchedTerms + matchReason
  */
 export function formatMatchedResult(
   resource: Resource,
-  score: number,
-  normalizedInput: string
+  scoreResult: ScoreResult
 ): MatchedResult {
   return {
     ...resource,
-    score,
-    matchReason: buildMatchReason(resource, normalizedInput),
+    score: scoreResult.score,
+    matchedTerms: scoreResult.matchedTerms,
+    matchReason: scoreResult.matchReason,
   };
 }
