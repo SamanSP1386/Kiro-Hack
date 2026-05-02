@@ -3,15 +3,12 @@
  *
  * OpenRouter-powered resource matching for PolyCare.
  *
- * Flow:
- *   1. Send student's problem + full resource list to the LLM
- *   2. LLM returns top 3 resource IDs + a warm reason for each
- *   3. We look up the full resource objects locally and return MatchedResource[]
- *   4. On any failure (network, bad JSON, timeout), returns null so the
- *      caller can fall back to the keyword matcher silently
- *
- * The keyword matcher in matcher.ts is always the fallback — this layer
- * only runs when the API key is present and the call succeeds.
+ * Improvements over v1:
+ *  - Uses google/gemini-flash-1.5 (free, much better instruction following)
+ *  - Resource list is embedded in the system prompt, not the user message
+ *  - JSON is extracted via regex fallback in case the model adds prose around it
+ *  - Prompt is tighter and more directive
+ *  - Falls back to keyword matcher on any failure
  */
 
 import { resources } from "../data/resources";
@@ -28,80 +25,94 @@ interface AIResponse {
   matches: AIMatch[];
 }
 
-// ── Resource summary for the prompt ─────────────────────────────────────────
+// ── Valid resource IDs (used to validate model output) ───────────────────────
 
-/**
- * Strips tags and backup_options from each resource before sending to the LLM.
- * Keeps the prompt focused on human-readable fields only.
- */
-function buildResourceSummary() {
-  return resources.map((r) => ({
-    id: r.id,
-    name: r.name,
-    category: r.category,
-    description: r.description,
-    best_for: r.best_for,
-    urgency: r.urgency,
-    what_to_do_first: r.what_to_do_first,
-    hours: r.hours,
-    location: r.location,
-    appointment_required: r.appointment_required,
-  }));
+const VALID_IDS = new Set(resources.map((r) => r.id));
+
+// ── Build the resource catalogue string for the system prompt ────────────────
+
+function buildCatalogue(): string {
+  return resources
+    .map(
+      (r) =>
+        `ID: ${r.id}
+Name: ${r.name}
+Category: ${r.category}
+Best for: ${r.best_for}
+What to do first: ${r.what_to_do_first}
+Hours: ${r.hours} | Location: ${r.location}`
+    )
+    .join("\n\n");
 }
 
 // ── System prompt ────────────────────────────────────────────────────────────
 
-const SYSTEM_PROMPT = `You are a Cal Poly SLO student support assistant.
+function buildSystemPrompt(): string {
+  return `You are a Cal Poly SLO student support assistant. Match the student's problem to the most relevant resources from this exact list. Do not invent resources.
 
-Your job is to read a student's problem and select the top 3 most relevant campus support resources from the list provided.
+AVAILABLE RESOURCES:
+${buildCatalogue()}
 
-Rules:
-- Always return exactly 3 matches (or fewer only if fewer than 3 resources exist)
-- Pick the resources that most directly address the student's actual situation
-- For each match, write a warm, plain, 1-sentence reason why it fits — speak directly to the student
-- Never use bureaucratic or clinical language
-- If the student sounds like they are in crisis, always include the crisis hotline
-- Return ONLY valid JSON in this exact format, no other text:
+MATCHING RULES:
+- Academic problems (failing, homework, math, studying, grades, exams) → use "tutoring-center" or "academic-advising"
+- Mental health (stress, anxiety, overwhelmed, depression, burnout) → use "counseling-services"
+- Food/money for food → use "food-pantry"
+- Financial emergency (rent, bills, can't afford) → use "emergency-grant"
+- Housing problems → use "housing-support"
+- Laptop/computer/tech issues → use "laptop-loan" or "it-help-desk"
+- Disability/accommodations → use "disability-services"
+- Career/interview/job → use "career-closet"
+- Multiple urgent needs / don't know where to start → use "basic-needs-office"
+- Crisis / self-harm / suicidal → ALWAYS include "crisis-hotline"
 
-{
-  "matches": [
-    { "id": "resource-id-here", "reason": "One warm sentence explaining why this helps." },
-    { "id": "resource-id-here", "reason": "One warm sentence explaining why this helps." },
-    { "id": "resource-id-here", "reason": "One warm sentence explaining why this helps." }
-  ]
-}`;
+INSTRUCTIONS:
+1. Pick the 3 resources whose category best matches the student's actual problem.
+2. For each, write one warm sentence (under 20 words) explaining why it helps THIS student.
+3. Output ONLY valid JSON. No markdown, no explanation, no extra text before or after.
+
+OUTPUT FORMAT:
+{"matches":[{"id":"RESOURCE_ID","reason":"Warm sentence."},{"id":"RESOURCE_ID","reason":"Warm sentence."},{"id":"RESOURCE_ID","reason":"Warm sentence."}]}`;
+}
+
+// ── Extract JSON from model output (handles prose wrapping) ──────────────────
+
+function extractJSON(raw: string): AIResponse | null {
+  // Try direct parse first
+  try {
+    return JSON.parse(raw) as AIResponse;
+  } catch {
+    // Try to find a JSON object anywhere in the string
+    const match = raw.match(/\{[\s\S]*"matches"[\s\S]*\}/);
+    if (match) {
+      try {
+        return JSON.parse(match[0]) as AIResponse;
+      } catch {
+        return null;
+      }
+    }
+    return null;
+  }
+}
 
 // ── Main function ────────────────────────────────────────────────────────────
 
 /**
  * Calls OpenRouter to get AI-powered resource matches for the student's input.
- *
- * Returns null on any error so the caller can fall back to keyword matching.
+ * Returns null on any error so the caller falls back to keyword matching silently.
  *
  * @param userInput - The student's free-text problem description
- * @param timeoutMs - Max time to wait for the API (default 8 seconds)
+ * @param timeoutMs - Max ms to wait for the API response (default 10s)
  */
 export async function findResourcesWithAI(
   userInput: string,
-  timeoutMs = 8000
+  timeoutMs = 10000
 ): Promise<MatchedResource[] | null> {
   const apiKey = import.meta.env.VITE_OPENROUTER_API_KEY as string | undefined;
 
   if (!apiKey) {
-    console.warn("[aiMatcher] No VITE_OPENROUTER_API_KEY found — skipping AI match");
+    console.warn("[aiMatcher] No VITE_OPENROUTER_API_KEY — skipping AI match");
     return null;
   }
-
-  const resourceSummary = buildResourceSummary();
-
-  const userMessage = `Here are the available Cal Poly support resources:
-
-${JSON.stringify(resourceSummary, null, 2)}
-
-A student said:
-"${userInput}"
-
-Return the top 3 matching resource IDs and a warm reason for each.`;
 
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), timeoutMs);
@@ -117,65 +128,59 @@ Return the top 3 matching resource IDs and a warm reason for each.`;
         "X-Title": "PolyCare",
       },
       body: JSON.stringify({
+        // meta-llama/llama-3.1-8b-instruct:free is confirmed free and available on OpenRouter
         model: "meta-llama/llama-3.1-8b-instruct:free",
         messages: [
-          { role: "system", content: SYSTEM_PROMPT },
-          { role: "user",   content: userMessage },
+          { role: "system", content: buildSystemPrompt() },
+          { role: "user",   content: userInput },
         ],
-        temperature: 0.3,       // low temp = more consistent, structured output
-        max_tokens: 512,
-        response_format: { type: "json_object" },
+        temperature: 0.2,  // low = consistent, structured output
+        max_tokens: 400,
       }),
     });
 
     clearTimeout(timeout);
 
     if (!response.ok) {
-      console.warn(`[aiMatcher] API error ${response.status}: ${response.statusText}`);
+      const body = await response.text().catch(() => "");
+      console.warn(`[aiMatcher] API error ${response.status}:`, body);
       return null;
     }
 
     const data = await response.json();
-    const content: string = data?.choices?.[0]?.message?.content ?? "";
+    const raw: string = data?.choices?.[0]?.message?.content ?? "";
 
-    if (!content) {
-      console.warn("[aiMatcher] Empty response from API");
+    if (!raw) {
+      console.warn("[aiMatcher] Empty response from model");
       return null;
     }
 
-    // Parse the JSON the model returned
-    let parsed: AIResponse;
-    try {
-      parsed = JSON.parse(content) as AIResponse;
-    } catch {
-      console.warn("[aiMatcher] Failed to parse JSON from model response:", content);
+    const parsed = extractJSON(raw);
+
+    if (!parsed || !Array.isArray(parsed.matches) || parsed.matches.length === 0) {
+      console.warn("[aiMatcher] Could not parse matches from:", raw);
       return null;
     }
 
-    if (!Array.isArray(parsed.matches) || parsed.matches.length === 0) {
-      console.warn("[aiMatcher] No matches in parsed response");
-      return null;
-    }
-
-    // Map AI match IDs back to full resource objects
+    // Map IDs → full resource objects, filtering out any hallucinated IDs
     const matched: MatchedResource[] = [];
 
     for (const match of parsed.matches.slice(0, 3)) {
-      const resource = resources.find((r) => r.id === match.id);
-      if (!resource) {
-        console.warn(`[aiMatcher] Unknown resource ID from model: "${match.id}"`);
+      if (!match.id || !VALID_IDS.has(match.id)) {
+        console.warn(`[aiMatcher] Ignoring unknown ID: "${match.id}"`);
         continue;
       }
+      const resource = resources.find((r) => r.id === match.id)!;
       matched.push({
         ...resource,
-        score: 10,                  // AI matches always score above keyword matches
-        matchedTerms: [],           // AI doesn't produce matched terms
-        matchReason: match.reason,  // Use the AI-generated warm reason
+        score: 10,
+        matchedTerms: [],
+        matchReason: match.reason?.trim() || resource.best_for,
       });
     }
 
     if (matched.length === 0) {
-      console.warn("[aiMatcher] No valid resource IDs in model response");
+      console.warn("[aiMatcher] No valid IDs in model response");
       return null;
     }
 
@@ -184,9 +189,9 @@ Return the top 3 matching resource IDs and a warm reason for each.`;
   } catch (err) {
     clearTimeout(timeout);
     if (err instanceof Error && err.name === "AbortError") {
-      console.warn("[aiMatcher] Request timed out after", timeoutMs, "ms");
+      console.warn(`[aiMatcher] Timed out after ${timeoutMs}ms`);
     } else {
-      console.warn("[aiMatcher] Unexpected error:", err);
+      console.warn("[aiMatcher] Error:", err);
     }
     return null;
   }

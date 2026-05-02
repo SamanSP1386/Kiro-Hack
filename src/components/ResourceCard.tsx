@@ -117,6 +117,22 @@ export function ResourceCard({ resource, rank, revealDelay = 0 }: ResourceCardPr
         </div>
       )}
 
+      {/* Hours + location */}
+      <div className="flex flex-wrap gap-x-5 gap-y-1 text-xs" style={{ color: "#94a3b8" }}>
+        <span className="flex items-center gap-1">
+          <span aria-hidden="true">🕐</span>
+          {resource.hours}
+        </span>
+        <span className="flex items-center gap-1">
+          <span aria-hidden="true">📍</span>
+          {resource.location}
+        </span>
+        <span className="flex items-center gap-1">
+          <span aria-hidden="true">{resource.appointment_required ? "📅" : "🚶"}</span>
+          {resource.appointment_required ? "Appointment needed" : "Drop-in welcome"}
+        </span>
+      </div>
+
       {/* Score debug */}
       <div className="flex flex-wrap gap-x-4 gap-y-0.5 text-xs pt-2" style={{ borderTop: "1px solid rgba(255,255,255,0.07)", color: "rgba(148,163,184,0.35)" }}>
         <span>score: {resource.score}</span>
