@@ -1,35 +1,60 @@
 /**
- * Quick manual test — run with:
+ * Deterministic backend verification script.
+ *
+ * Run with:
  *   npx tsx src/test/runMatchTests.ts
  *
- * No test framework needed. Just logs match results to the terminal
- * so Dev A can verify quality against expectedResults.ts.
+ * Exits with code 0 if every prompt passes.
+ * Exits with code 1 if any prompt fails.
+ *
+ * Assertion rule:
+ *   expectedTopResults is treated as an ordered expected prefix.
+ *   - actual results must contain at least expectedTopResults.length items
+ *   - actual names are compared in order against expectedTopResults
+ *   - extra actual results beyond the expected list are ignored
  */
 
 import { findResources } from "../utils/matcher";
 import { expectedMatchTests } from "../data/expectedResults";
 
+// ── Run tests ────────────────────────────────────────────────────────────────
+
+let passed = 0;
+let failed = 0;
+
 console.log("=".repeat(60));
-console.log("MATCH QUALITY TEST");
+console.log("BACKEND MATCH VERIFICATION");
 console.log("=".repeat(60));
 
 for (const test of expectedMatchTests) {
-  const results = findResources(test.prompt);
+  const actual = findResources(test.prompt);
+  const expected = test.expectedTopResults;
 
-  console.log(`\nPROMPT: "${test.prompt}"`);
-  console.log(`EXPECTED: ${test.expectedTopResults.join(" → ")}`);
-  console.log("GOT:");
+  // Slice actual down to the length we need to compare
+  const actualSlice = actual.slice(0, expected.length).map((r) => r.name);
 
-  if (results.length === 0) {
-    console.log("  ⚠️  No results returned");
+  // Pass only if every position matches exactly
+  const pass =
+    actualSlice.length === expected.length &&
+    expected.every((name, i) => actualSlice[i] === name);
+
+  if (pass) {
+    passed++;
+    console.log(`\nPASS: "${test.prompt}"`);
   } else {
-    results.forEach((r, i) => {
-      const expected = test.expectedTopResults[i];
-      const match = expected && r.name === expected ? "✅" : "❌";
-      console.log(`  ${i + 1}. ${match} ${r.name} (score: ${r.score})`);
-      console.log(`     reason: ${r.matchReason}`);
-    });
+    failed++;
+    console.log(`\nFAIL: "${test.prompt}"`);
+    console.log(`  Expected : ${expected.join(" | ")}`);
+    console.log(`  Actual   : ${actualSlice.length > 0 ? actualSlice.join(" | ") : "(no results)"}`);
   }
+}
 
-  console.log("-".repeat(60));
+// ── Summary ──────────────────────────────────────────────────────────────────
+
+console.log("\n" + "=".repeat(60));
+console.log(`RESULTS: ${passed} passed, ${failed} failed`);
+console.log("=".repeat(60));
+
+if (failed > 0) {
+  process.exitCode = 1;
 }
