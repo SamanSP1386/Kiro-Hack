@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useRef, useCallback } from "react";
 import type { MatchedResource } from "./types/resource";
 import { findResources, getFallbackResources } from "./utils/matcher";
 import { findResourcesWithAI } from "./utils/aiMatcher";
@@ -9,8 +9,6 @@ import ResourcesView from "./components/ResourcesView";
 import SupportView from "./components/SupportView";
 
 // ── Neuron network ────────────────────────────────────────────────────────────
-// Entire SVG drifts as one unit — dots and lines always share the same
-// coordinate space so endpoints are always perfectly aligned.
 
 function NeuronLayer() {
   const nodes = [
@@ -121,6 +119,18 @@ function NeuronLayer() {
 
 type View = "hero" | "match" | "resources" | "support";
 
+// Cinematic Morph + Blur transition state machine
+// "idle"     — no transition in progress
+// "out"      — outgoing view is morphing away
+// "in"       — incoming view is resolving into focus
+type MorphPhase = "idle" | "out" | "in";
+type MorphDir   = "fwd" | "back";
+
+// Timing (ms) — total ~480ms
+const MORPH_OUT_MS = 200;  // outgoing view duration before swap
+const MORPH_IN_MS  = 480;  // incoming view animation duration
+const IDLE_BUFFER  = 60;   // buffer after incoming completes
+
 // ── App ───────────────────────────────────────────────────────────────────────
 
 export default function App() {
@@ -130,14 +140,15 @@ export default function App() {
   const [isFallback,  setIsFallback]  = useState(false);
   const [hasSearched, setHasSearched] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  // View / transition state
-  const [view,        setView]        = useState<View>("hero");
-  const [heroExiting, setHeroExiting] = useState(false);
-  const [sectionReady, setSectionReady] = useState(false);
 
-  const heroRef    = useRef<HTMLDivElement>(null);
-  const sectionRef = useRef<HTMLDivElement>(null);
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  // View + morph state
+  const [activeView,  setActiveView]  = useState<View>("hero");
+  const [morphPhase,  setMorphPhase]  = useState<MorphPhase>("idle");
+  const [morphDir,    setMorphDir]    = useState<MorphDir>("fwd");
+
+  const textareaRef  = useRef<HTMLTextAreaElement>(null);
+  const secondaryRef = useRef<HTMLDivElement>(null);
+  const busy         = useRef(false);
 
   async function handleSubmit() {
     if (isLoading) return;
@@ -173,82 +184,126 @@ export default function App() {
     }
   }
 
-  // Navigate to any non-hero view with the smooth downward transition
-  function navigateTo(target: Exclude<View, "hero">, focusTextarea = false) {
-    setHeroExiting(true);
-    setSectionReady(true);
-    setView(target);
+  // ── Cinematic Morph + Blur engine ─────────────────────────────────────────
+  //
+  // Timeline (forward, ~480ms total):
+  //   0ms       — outgoing view starts morphing out (.morph-out)
+  //               neuron lines brighten (.transitioning on body)
+  //   200ms     — view swaps; incoming view starts resolving in (.morph-in)
+  //               outgoing view is now hidden (opacity 0)
+  //   200+480ms — incoming view fully resolved, go idle
+  //
+  // Both views animate over the same background — no wipe panel needed.
+  // The blur-to-clear on the incoming view is the cinematic "focus pull".
+
+  const runMorph = useCallback((dir: MorphDir, onSwap: () => void) => {
+    if (busy.current) return;
+    busy.current = true;
+
+    document.body.classList.add("transitioning");
+    setMorphDir(dir);
+    setMorphPhase("out");
+
+    // Swap views at the morph-out midpoint
     setTimeout(() => {
-      sectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+      onSwap();
+      setMorphPhase("in");
+      document.body.classList.remove("transitioning");
+      if (secondaryRef.current) secondaryRef.current.scrollTop = 0;
+    }, MORPH_OUT_MS);
+
+    // Go idle after incoming animation completes
+    setTimeout(() => {
+      setMorphPhase("idle");
+      busy.current = false;
+    }, MORPH_OUT_MS + MORPH_IN_MS + IDLE_BUFFER);
+  }, []);
+
+  const navigateTo = useCallback((target: Exclude<View, "hero">, focusTextarea = false) => {
+    runMorph("fwd", () => {
+      setActiveView(target);
       if (focusTextarea && target === "match") {
-        setTimeout(() => textareaRef.current?.focus(), 300);
+        setTimeout(() => textareaRef.current?.focus(), 200);
       }
-    }, 420);
-  }
+    });
+  }, [runMorph]);
 
-  function goHome() {
-    heroRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
-    setTimeout(() => {
-      setHeroExiting(false);
-      setSectionReady(false);
-      setView("hero");
-    }, 650);
-  }
+  const goHome = useCallback(() => {
+    runMorph("back", () => {
+      setActiveView("hero");
+    });
+  }, [runMorph]);
 
-  // Scroll to section when it first becomes ready
-  useEffect(() => {
-    if (sectionReady && sectionRef.current) {
-      sectionRef.current.scrollIntoView({ behavior: "smooth", block: "start" });
-    }
-  }, [sectionReady]);
+  // ── Derived animation classes ──────────────────────────────────────────────
+
+  const isOnHero      = activeView === "hero";
+  const isOnSecondary = !isOnHero;
+
+  // Hero layer: morphs out on fwd, morphs in on back
+  const heroClass = (() => {
+    if (morphPhase === "out"  && morphDir === "fwd")  return "morph-out";
+    if (morphPhase === "in"   && morphDir === "back") return "morph-in-back";
+    return "";
+  })();
+
+  // Secondary layer: morphs in on fwd, morphs out on back
+  const secondaryClass = (() => {
+    if (morphPhase === "in"  && morphDir === "fwd")  return "morph-in";
+    if (morphPhase === "out" && morphDir === "back") return "morph-out-back";
+    return "";
+  })();
 
   return (
-    <div className="page-bg relative">
+    <div className="page-bg fixed inset-0 overflow-hidden" style={{ zIndex: 0 }}>
+
       {/* Fixed neuron layer */}
       <NeuronLayer />
 
       {/* Ambient orbs */}
-      <div aria-hidden="true" className="orb-breathe pointer-events-none fixed -top-40 -left-40 w-[560px] h-[560px] rounded-full" style={{ zIndex: 0, background: "radial-gradient(circle, rgba(50,50,180,0.14) 0%, transparent 68%)" }} />
-      <div aria-hidden="true" className="orb-breathe pointer-events-none fixed top-1/2 -right-24 w-[420px] h-[420px] rounded-full" style={{ zIndex: 0, animationDelay: "5s", background: "radial-gradient(circle, rgba(20,100,140,0.08) 0%, transparent 65%)" }} />
-      <div aria-hidden="true" className="orb-breathe pointer-events-none fixed -bottom-20 left-1/3 w-[480px] h-[480px] rounded-full" style={{ zIndex: 0, animationDelay: "10s", background: "radial-gradient(circle, rgba(80,50,160,0.09) 0%, transparent 65%)" }} />
+      <div aria-hidden="true" className="orb-breathe pointer-events-none fixed -top-40 -left-40 w-[560px] h-[560px] rounded-full"
+        style={{ zIndex: 0, background: "radial-gradient(circle, rgba(50,50,180,0.14) 0%, transparent 68%)" }} />
+      <div aria-hidden="true" className="orb-breathe pointer-events-none fixed top-1/2 -right-24 w-[420px] h-[420px] rounded-full"
+        style={{ zIndex: 0, animationDelay: "5s", background: "radial-gradient(circle, rgba(20,100,140,0.08) 0%, transparent 65%)" }} />
+      <div aria-hidden="true" className="orb-breathe pointer-events-none fixed -bottom-20 left-1/3 w-[480px] h-[480px] rounded-full"
+        style={{ zIndex: 0, animationDelay: "10s", background: "radial-gradient(circle, rgba(80,50,160,0.09) 0%, transparent 65%)" }} />
 
-      {/* ── Hero — always in DOM, fades when exiting ── */}
+      {/* ── Hero layer ── */}
       <div
-        ref={heroRef}
-        className="relative"
+        className={`fixed inset-0 ${heroClass}`}
         style={{
-          zIndex: 1,
-          transition: "opacity 0.5s cubic-bezier(0.4,0,0.6,1)",
-          opacity: heroExiting ? 0.15 : 1,
+          zIndex: isOnHero ? 2 : 1,
+          // Keep hero invisible (but in DOM) when secondary is fully active
+          opacity: isOnSecondary && morphPhase === "idle" ? 0 : undefined,
+          pointerEvents: isOnSecondary ? "none" : undefined,
         }}
+        aria-hidden={isOnSecondary}
       >
         <ConstellationHero
           onStartMatching={() => navigateTo("match")}
           onGoResources={()   => navigateTo("resources")}
           onGoSupport={()     => navigateTo("support")}
-          isExiting={heroExiting}
+          isExiting={false}
         />
       </div>
 
-      {/* ── Secondary section — revealed on navigation ── */}
-      {sectionReady && (
+      {/* ── Secondary layer ── */}
+      {isOnSecondary && (
         <div
-          ref={sectionRef}
-          className="section-reveal relative"
-          style={{ zIndex: 1 }}
+          ref={secondaryRef}
+          className={`fixed inset-0 overflow-y-auto ${secondaryClass}`}
+          style={{ zIndex: 2 }}
+          aria-hidden={isOnHero}
         >
-          {/* ── Match view ── */}
-          {view === "match" && (
-            <div className="relative z-10 px-4 pb-28 pt-12 sm:px-8">
-              {/* Separator */}
+          {/* Match view */}
+          {activeView === "match" && (
+            <div className="relative px-4 pb-28 pt-12 sm:px-8 min-h-full">
               <div aria-hidden="true" className="pointer-events-none absolute top-0 left-1/2 -translate-x-1/2 w-[700px] h-px"
                 style={{ background: "linear-gradient(90deg, transparent, rgba(103,184,200,0.3), rgba(99,102,241,0.3), transparent)" }} />
 
               <div className="mx-auto max-w-2xl">
-                {/* Back */}
                 <div className="back-btn-in mb-8">
                   <button type="button" onClick={goHome}
-                    className="inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium backdrop-blur-sm transition-all duration-200 hover:-translate-x-0.5 active:scale-95 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-400"
+                    className="inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium backdrop-blur-sm transition-all duration-150 hover:-translate-x-0.5 active:scale-95 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-400"
                     style={{ background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.16)", color: "#cbd5e1" }}
                     onMouseEnter={(e) => { const el = e.currentTarget as HTMLButtonElement; el.style.background = "rgba(255,255,255,0.12)"; el.style.color = "#f1f5f9"; }}
                     onMouseLeave={(e) => { const el = e.currentTarget as HTMLButtonElement; el.style.background = "rgba(255,255,255,0.07)"; el.style.color = "#cbd5e1"; }}
@@ -260,7 +315,6 @@ export default function App() {
                   </button>
                 </div>
 
-                {/* Header */}
                 <header className="mb-8 text-center">
                   <p className="text-xs font-semibold uppercase tracking-[0.22em] mb-2" style={{ color: "#67b8c8" }}>
                     Student Support Finder
@@ -273,7 +327,6 @@ export default function App() {
                   </p>
                 </header>
 
-                {/* Search panel */}
                 <div className="rounded-2xl p-6 backdrop-blur-lg" style={{
                   background: "rgba(8, 18, 48, 0.85)",
                   border: "1px solid rgba(80,120,200,0.22)",
@@ -312,13 +365,11 @@ export default function App() {
               </div>
           )}
 
-          {/* ── Resources view ── */}
-          {view === "resources" && (
+          {activeView === "resources" && (
             <ResourcesView onGoHome={goHome} onGoMatch={() => navigateTo("match")} />
           )}
 
-          {/* ── Support view ── */}
-          {view === "support" && (
+          {activeView === "support" && (
             <SupportView onGoHome={goHome} onGoMatch={() => navigateTo("match")} />
           )}
         </div>

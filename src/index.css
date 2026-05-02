@@ -6,16 +6,16 @@
 @tailwind utilities;
 
 /* ── Base ──────────────────────────────────────────────────────────────────── */
-html { scroll-behavior: smooth; }
-body {
+html, body {
+  height: 100%;
+  overflow: hidden;
   font-family: 'Inter', system-ui, -apple-system, sans-serif;
   -webkit-font-smoothing: antialiased;
   background: #0a1020;
-  /* No overflow:hidden — sections live in normal document flow */
 }
 
 /* ════════════════════════════════════════════════════════════════════════════
-   KEYFRAMES
+   BACKGROUND
    ════════════════════════════════════════════════════════════════════════════ */
 
 @keyframes bgDrift {
@@ -24,37 +24,114 @@ body {
   100% { background-position: 0% 0%;   }
 }
 
-/* Hero content entrance */
+.page-bg {
+  background:
+    radial-gradient(ellipse 70% 55% at 15% 10%,  rgba(40,70,160,0.14)  0%, transparent 65%),
+    radial-gradient(ellipse 55% 45% at 85% 15%,  rgba(80,50,160,0.11)  0%, transparent 60%),
+    radial-gradient(ellipse 60% 55% at 50% 85%,  rgba(15,70,140,0.10)  0%, transparent 65%),
+    radial-gradient(ellipse 45% 35% at 8%  72%,  rgba(0,110,140,0.07)  0%, transparent 55%),
+    linear-gradient(160deg, #0a1020 0%, #0d1230 30%, #100a28 55%, #0b1230 80%, #080f1e 100%);
+  background-size: 200% 200%;
+  animation: bgDrift 32s ease-in-out infinite;
+}
+
+/* ════════════════════════════════════════════════════════════════════════════
+   HERO ENTRANCE (initial page load)
+   ════════════════════════════════════════════════════════════════════════════ */
+
 @keyframes fadeUp {
-  from { opacity: 0; transform: translateY(20px); }
+  from { opacity: 0; transform: translateY(18px); }
   to   { opacity: 1; transform: translateY(0);    }
 }
 
-/* Hero exit — compress upward */
-@keyframes heroExit {
-  from { opacity: 1; transform: translateY(0)     scale(1);    }
-  to   { opacity: 0; transform: translateY(-36px) scale(0.97); }
+.fade-up { animation: fadeUp 0.6s cubic-bezier(0.22,1,0.36,1) both; }
+.delay-1 { animation-delay: 0.06s; }
+.delay-2 { animation-delay: 0.12s; }
+.delay-3 { animation-delay: 0.19s; }
+.delay-4 { animation-delay: 0.27s; }
+.delay-5 { animation-delay: 0.35s; }
+
+/* ════════════════════════════════════════════════════════════════════════════
+   CINEMATIC MORPH + BLUR TRANSITION
+   ─────────────────────────────────────────────────────────────────────────
+   Both views animate simultaneously over ~480ms.
+
+   OUTGOING (hero leaving / secondary leaving):
+     scale 1 → 0.96, blur 0 → 8px, opacity 1 → 0, translateY 0 → -12px
+     Easing: cubic-bezier(0.4, 0, 0.6, 1) — accelerates into depth
+
+   INCOMING (secondary entering / hero returning):
+     scale 1.04 → 1, blur 8px → 0, opacity 0 → 1, translateY 12px → 0
+     Easing: cubic-bezier(0.16, 1, 0.3, 1) — spring settle into focus
+
+   The blur-to-clear on the incoming view is the "cinematic" moment —
+   it feels like a camera pulling focus onto the new content.
+   ════════════════════════════════════════════════════════════════════════════ */
+
+/* ── Outgoing: hero morphs away (forward nav) ── */
+@keyframes morphOut {
+  0%   { opacity: 1;   transform: scale(1)    translateY(0);     filter: blur(0px);  }
+  100% { opacity: 0;   transform: scale(0.96) translateY(-12px); filter: blur(8px);  }
 }
 
-/* Secondary section reveal — rise from below */
-@keyframes sectionReveal {
-  from { opacity: 0; transform: translateY(44px); }
-  to   { opacity: 1; transform: translateY(0);    }
+/* ── Incoming: secondary resolves into focus (forward nav) ── */
+@keyframes morphIn {
+  0%   { opacity: 0;   transform: scale(1.04) translateY(12px);  filter: blur(8px);  }
+  65%  {                                                           filter: blur(0px);  }
+  100% { opacity: 1;   transform: scale(1)    translateY(0);      filter: blur(0px);  }
 }
 
-/* Card stagger */
+/* ── Outgoing: secondary morphs away (back nav) ── */
+@keyframes morphOutBack {
+  0%   { opacity: 1;   transform: scale(1)    translateY(0);     filter: blur(0px);  }
+  100% { opacity: 0;   transform: scale(0.96) translateY(12px);  filter: blur(8px);  }
+}
+
+/* ── Incoming: hero resolves into focus (back nav) ── */
+@keyframes morphInBack {
+  0%   { opacity: 0;   transform: scale(1.04) translateY(-12px); filter: blur(8px);  }
+  65%  {                                                           filter: blur(0px);  }
+  100% { opacity: 1;   transform: scale(1)    translateY(0);      filter: blur(0px);  }
+}
+
+/* ── CTA button glow pulse on press ── */
+@keyframes ctaGlow {
+  0%   { box-shadow: 0 4px 20px rgba(60,80,180,0.35); }
+  50%  { box-shadow: 0 0 40px rgba(80,120,240,0.70), 0 0 80px rgba(60,80,200,0.35); }
+  100% { box-shadow: 0 4px 20px rgba(60,80,180,0.35); }
+}
+
+/* Applied animation classes */
+.morph-out      { animation: morphOut     0.42s cubic-bezier(0.4,0,0.6,1)   forwards; }
+.morph-in       { animation: morphIn      0.48s cubic-bezier(0.16,1,0.3,1)  both;     }
+.morph-out-back { animation: morphOutBack 0.38s cubic-bezier(0.4,0,0.6,1)   forwards; }
+.morph-in-back  { animation: morphInBack  0.48s cubic-bezier(0.16,1,0.3,1)  both;     }
+
+/* CTA glow on trigger */
+.cta-glow { animation: ctaGlow 0.45s cubic-bezier(0.22,1,0.36,1) forwards; }
+
+/* ════════════════════════════════════════════════════════════════════════════
+   CARD / ELEMENT REVEALS
+   ════════════════════════════════════════════════════════════════════════════ */
+
 @keyframes cardReveal {
-  from { opacity: 0; transform: translateY(12px); }
-  to   { opacity: 1; transform: translateY(0);    }
+  from { opacity: 0; transform: translateY(10px); filter: blur(2px); }
+  to   { opacity: 1; transform: translateY(0);    filter: blur(0px); }
 }
 
-/* Ambient orb breathe */
-@keyframes orbBreathe {
-  0%, 100% { opacity: 0.25; transform: scale(1);    }
-  50%       { opacity: 0.45; transform: scale(1.06); }
+.card-reveal { animation: cardReveal 0.36s cubic-bezier(0.22,1,0.36,1) both; }
+
+@keyframes fadeInLeft {
+  from { opacity: 0; transform: translateX(-8px); }
+  to   { opacity: 1; transform: translateX(0);    }
 }
 
-/* Neuron SVG slow drift — keeps dots on lines */
+.back-btn-in { animation: fadeInLeft 0.26s cubic-bezier(0.22,1,0.36,1) both 0.06s; }
+
+/* ════════════════════════════════════════════════════════════════════════════
+   NEURON BACKGROUND
+   ════════════════════════════════════════════════════════════════════════════ */
+
 @keyframes svgDrift {
   0%   { transform: translate(0px,  0px); }
   25%  { transform: translate(6px, -4px); }
@@ -66,6 +143,13 @@ body {
 @keyframes lineShimmer {
   0%, 100% { opacity: 0.12; }
   50%       { opacity: 0.32; }
+}
+
+/* Lines pulse brighter during morph transition */
+.transitioning .n-line {
+  animation: none !important;
+  opacity: 0.45;
+  transition: opacity 0.2s ease;
 }
 
 @keyframes dotPulse {
@@ -80,63 +164,31 @@ body {
   100% { stroke-dashoffset: 0;   opacity: 0;  }
 }
 
-@keyframes fadeInLeft {
-  from { opacity: 0; transform: translateX(-10px); }
-  to   { opacity: 1; transform: translateX(0);     }
+@keyframes orbBreathe {
+  0%, 100% { opacity: 0.25; transform: scale(1);    }
+  50%       { opacity: 0.45; transform: scale(1.06); }
 }
 
-/* ════════════════════════════════════════════════════════════════════════════
-   UTILITY CLASSES
-   ════════════════════════════════════════════════════════════════════════════ */
-
-.page-bg {
-  background:
-    radial-gradient(ellipse 70% 55% at 15% 10%,  rgba(40,70,160,0.14)  0%, transparent 65%),
-    radial-gradient(ellipse 55% 45% at 85% 15%,  rgba(80,50,160,0.11)  0%, transparent 60%),
-    radial-gradient(ellipse 60% 55% at 50% 85%,  rgba(15,70,140,0.10)  0%, transparent 65%),
-    radial-gradient(ellipse 45% 35% at 8%  72%,  rgba(0,110,140,0.07)  0%, transparent 55%),
-    linear-gradient(160deg, #0a1020 0%, #0d1230 30%, #100a28 55%, #0b1230 80%, #080f1e 100%);
-  background-size: 200% 200%;
-  animation: bgDrift 32s ease-in-out infinite;
-}
-
-/* Hero entrance stagger */
-.fade-up { animation: fadeUp 0.7s cubic-bezier(0.22,1,0.36,1) both; }
-.delay-1 { animation-delay: 0.08s; }
-.delay-2 { animation-delay: 0.18s; }
-.delay-3 { animation-delay: 0.28s; }
-.delay-4 { animation-delay: 0.40s; }
-.delay-5 { animation-delay: 0.52s; }
-
-/* Hero exit */
-.hero-exiting { animation: heroExit 0.5s cubic-bezier(0.4,0,0.6,1) forwards; }
-
-/* Section reveal */
-.section-reveal { animation: sectionReveal 0.55s cubic-bezier(0.22,1,0.36,1) both; }
-
-.card-reveal  { animation: cardReveal  0.45s cubic-bezier(0.22,1,0.36,1) both; }
-.orb-breathe  { animation: orbBreathe  10s   ease-in-out infinite; }
-.back-btn-in  { animation: fadeInLeft  0.35s cubic-bezier(0.22,1,0.36,1) both 0.1s; }
-
-/* Neuron */
-.neuron-svg { animation: svgDrift    40s ease-in-out infinite; }
-.n-line     { animation: lineShimmer  6s ease-in-out infinite; }
-.n-dot      { animation: dotPulse     4s ease-in-out infinite; }
-.n-flow     { animation: lineFlow     5s ease-in-out infinite; }
+.neuron-svg  { animation: svgDrift    40s ease-in-out infinite; }
+.n-line      { animation: lineShimmer  6s ease-in-out infinite; }
+.n-dot       { animation: dotPulse     4s ease-in-out infinite; }
+.n-flow      { animation: lineFlow     5s ease-in-out infinite; }
+.orb-breathe { animation: orbBreathe  10s ease-in-out infinite; }
 
 /* ════════════════════════════════════════════════════════════════════════════
    REDUCED MOTION
    ════════════════════════════════════════════════════════════════════════════ */
+
 @media (prefers-reduced-motion: reduce) {
-  html { scroll-behavior: auto; }
-  .page-bg, .fade-up, .hero-exiting, .section-reveal, .card-reveal,
-  .orb-breathe, .back-btn-in, .neuron-svg,
-  .n-line, .n-dot, .n-flow,
-  .animate-ping, .animate-bounce {
+  .page-bg, .fade-up,
+  .morph-out, .morph-in, .morph-out-back, .morph-in-back,
+  .cta-glow, .card-reveal, .back-btn-in,
+  .orb-breathe, .neuron-svg, .n-line, .n-dot, .n-flow {
     animation: none !important;
     transition-duration: 0.01ms !important;
     opacity: 1 !important;
     transform: none !important;
+    filter: none !important;
   }
   .page-bg { background-position: 0% 0%; }
 }
