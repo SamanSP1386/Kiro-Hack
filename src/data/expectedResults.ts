@@ -25,7 +25,7 @@ export const expectedMatchTests: ExpectedMatchTest[] = [
     expectedTopResults: [
       "Laptop and Technology Loan Program",
       "IT Help Desk",
-      "Basic Needs Office",
+      "Tutoring and Learning Center",
     ],
   },
   {

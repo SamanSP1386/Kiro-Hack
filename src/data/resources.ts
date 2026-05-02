@@ -14,9 +14,12 @@ export const resources: Resource[] = [
       "basic needs",
       "money",
       "low income",
-      "can't afford food",
+      "cant afford food",       // normalizer strips apostrophes
+      "cant afford",
       "broke",
-      "no food"
+      "no food",
+      "skipping meals",
+      "not eating"
     ],
     description: "Provides free groceries and basic supplies for students facing food insecurity.",
     best_for: "Students who need food support this week or are skipping meals because of money.",
@@ -40,13 +43,17 @@ export const resources: Resource[] = [
       "basic needs",
       "emergency",
       "struggling",
-      "can't afford",
+      "cant afford",            // normalizer strips apostrophes
       "support",
       "resources",
-      "don't know where to start",
+      "dont know where to start", // normalizer strips apostrophes
+      "dont know where",
       "need help",
       "overwhelmed",
-      "not sure"
+      "not sure",
+      "not sure where to go",
+      "multiple problems",
+      "everything at once"
     ],
     description: "Connects students with food, housing, emergency funding, and other essential support services.",
     best_for: "Students facing multiple urgent life needs who are not sure where to start.",
@@ -70,13 +77,20 @@ export const resources: Resource[] = [
       "bills",
       "unexpected expense",
       "urgent",
-      "can't pay",
+      "cant pay",               // normalizer strips apostrophes
+      "cant pay rent",
       "emergency funding",
       "fees",
       "broke",
       "no money",
-      "can't afford",
-      "tuition"
+      "cant afford",
+      "tuition",
+      "lose housing",           // housing-adjacent financial need
+      "losing housing",
+      "might lose housing",
+      "eviction",
+      "medical bills",
+      "unexpected cost"
     ],
     description: "Offers limited short-term financial support for students facing unexpected emergencies.",
     best_for: "Students with urgent financial problems such as rent, medical costs, or sudden loss of income.",
@@ -105,6 +119,7 @@ export const resources: Resource[] = [
       "depression",
       "depressed",
       "overwhelmed",
+      "feeling overwhelmed",
       "mental health",
       "burnout",
       "panic",
@@ -112,10 +127,17 @@ export const resources: Resource[] = [
       "lonely",
       "counseling",
       "therapy",
-      "can't cope",
+      "cant cope",              // normalizer strips apostrophes
       "falling apart",
       "exhausted",
-      "crying"
+      "crying",
+      "too much",
+      "cant handle",
+      "breaking down",
+      "falling behind",         // "overwhelmed + falling behind" should surface this
+      "behind in class",
+      "struggling emotionally",
+      "need to talk to someone"
     ],
     description: "Provides counseling, crisis support, and mental health resources for students.",
     best_for: "Students experiencing emotional distress, anxiety, burnout, or ongoing mental health concerns.",
@@ -145,9 +167,12 @@ export const resources: Resource[] = [
       "alone",
       "desperate",
       "emergency",
-      "can't go on",
+      "cant go on",             // normalizer strips apostrophes
       "hopeless",
-      "hurt myself"
+      "hurt myself",
+      "want to hurt myself",
+      "thinking about suicide",
+      "not safe"
     ],
     description: "Immediate crisis support for students who need urgent emotional help outside normal office hours.",
     best_for: "Students in immediate emotional crisis or who feel unsafe.",
@@ -180,7 +205,11 @@ export const resources: Resource[] = [
       "falling behind",
       "bad grade",
       "need help studying",
-      "test"
+      "test",
+      "dont understand",        // normalizer strips apostrophes
+      "lost in class",
+      "struggling in class",
+      "cant keep up"
     ],
     description: "Provides tutoring, study support, and academic skill-building for students across subjects.",
     best_for: "Students who are struggling in class, behind on coursework, or preparing for exams.",
@@ -215,8 +244,19 @@ export const resources: Resource[] = [
       "dropping class",
       "drop",
       "failing",
-      "don't know what to do",
-      "academic standing"
+      "dont know what to do",   // normalizer strips apostrophes
+      "academic standing",
+      "dont know where to start", // fires on accommodations prompt
+      "not sure what to do",
+      "need guidance",
+      "need direction",
+      "where do i start",
+      "what should i do",
+      "accommodations",           // advisors help students navigate accommodation process
+      "need accommodations",
+      "how to get help",
+      "where to start",
+      "not sure where to start"
     ],
     description: "Helps students make academic plans, understand requirements, and respond to academic difficulties.",
     best_for: "Students unsure what to do about academic standing, course planning, registration, or falling behind.",
@@ -240,15 +280,20 @@ export const resources: Resource[] = [
       "technology",
       "broken laptop",
       "laptop broke",
+      "laptop broken",
       "computer broke",
+      "computer broken",
       "wifi",
-      "can't access class",
+      "cant access class",      // normalizer strips apostrophes
       "hardware",
       "borrow laptop",
       "no computer",
       "no device",
       "need laptop",
-      "homework due"
+      "homework due",
+      "lose laptop",
+      "lost my laptop",
+      "no laptop"
     ],
     description: "Provides temporary access to laptops and other technology for students with equipment barriers.",
     best_for: "Students whose laptop broke, who do not own a device, or who cannot access coursework because of tech issues.",
@@ -280,7 +325,13 @@ export const resources: Resource[] = [
       "kicked out",
       "losing housing",
       "might lose housing",
-      "no place to stay"
+      "lose housing",           // matches "i might lose housing"
+      "could lose housing",
+      "no place to stay",
+      "housing instability",
+      "housing problem",
+      "cant afford rent",       // normalizer strips apostrophes
+      "behind on rent"
     ],
     description: "Supports students dealing with housing instability, unsafe living situations, or emergency housing needs.",
     best_for: "Students who may lose housing, feel unsafe where they live, or need help finding temporary options.",
@@ -314,8 +365,12 @@ export const resources: Resource[] = [
       "adhd",
       "testing accommodations",
       "need accommodations",
-      "don't know where to start",
-      "dyslexia"
+      "dont know where to start", // normalizer strips apostrophes — fires on prompt 6
+      "dont know how to get accommodations",
+      "dyslexia",
+      "how do i get accommodations",
+      "accommodation request",
+      "need support for disability"
     ],
     description: "Provides accommodation support and accessibility resources for students with disabilities or related needs.",
     best_for: "Students who need academic or campus accommodations, or who are unsure how to request support.",
@@ -349,7 +404,10 @@ export const resources: Resource[] = [
       "interview clothes",
       "nothing to wear",
       "dress for interview",
-      "job fair"
+      "job fair",
+      "need clothes for interview",
+      "what to wear",
+      "professional outfit"
     ],
     description: "Provides interview clothing, career prep support, and professional readiness resources.",
     best_for: "Students preparing for interviews, career fairs, internships, or networking events.",
@@ -378,9 +436,13 @@ export const resources: Resource[] = [
       "canvas",
       "email issue",
       "internet",
-      "can't log in",
+      "cant log in",            // normalizer strips apostrophes
       "account locked",
-      "reset password"
+      "reset password",
+      "cant access",
+      "not working",
+      "technical problem",
+      "system down"
     ],
     description: "Helps students with technology access, software, login problems, and campus systems.",
     best_for: "Students who cannot access online tools, campus accounts, or required software.",
