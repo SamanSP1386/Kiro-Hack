@@ -1,6 +1,6 @@
 import { useState, useRef, useCallback } from "react";
 import type { MatchedResource } from "./types/resource";
-import { findResources, getFallbackResources } from "./utils/matcher";
+import { findResources } from "./utils/matcher";
 import { findResourcesWithAI } from "./utils/aiMatcher";
 import ConstellationHero from "./components/ConstellationHero";
 import { SearchForm } from "./components/SearchForm";
@@ -137,22 +137,39 @@ export default function App() {
 
   async function handleSubmit() {
     if (isLoading) return;
+
+    // Empty input — do nothing, just show a hint
+    if (!input.trim()) {
+      setHasSearched(false);
+      return;
+    }
+
     setIsLoading(true);
 
     try {
-      if (!input.trim()) {
-        setResults(getFallbackResources());
-        setIsFallback(true);
-        setHasSearched(true);
-        return;
-      }
-
+      // Try AI matcher first
       const aiResults = await findResourcesWithAI(input);
 
       if (aiResults && aiResults.length > 0) {
+        // AI found relevant matches
         setResults(aiResults);
         setIsFallback(false);
+        setHasSearched(true);
       } else if (aiResults !== null) {
+        // AI explicitly returned empty — input not campus-related
+        // Try keyword matcher as last resort
+        const keywordResults = findResources(input);
+        const allFallback = keywordResults.every((r) => r.score === 0);
+        if (allFallback) {
+          // Nothing matched — show empty state message
+          setResults([]);
+          setIsFallback(false);
+        } else {
+          setResults(keywordResults);
+          setIsFallback(false);
+        }
+        setHasSearched(true);
+      } else {
         const keywordResults = findResources(input);
         const allFallback = keywordResults.every((r) => r.score === 0);
         if (allFallback) {
@@ -160,16 +177,10 @@ export default function App() {
           setIsFallback(false);
         } else {
           setResults(keywordResults);
-          setIsFallback(false);
+          setIsFallback(allFallback);
         }
-      } else {
-        const keywordResults = findResources(input);
-        const allFallback = keywordResults.every((r) => r.score === 0);
-        setResults(keywordResults);
-        setIsFallback(allFallback);
+        setHasSearched(true);
       }
-
-      setHasSearched(true);
     } finally {
       setIsLoading(false);
     }
@@ -282,7 +293,7 @@ export default function App() {
                 {/* Empty state */}
                 {!hasSearched && !isLoading && (
                   <p className="mt-5 text-center text-xs" style={{ color: "rgba(148,163,184,0.5)" }}>
-                    Try one of the example prompts, or describe your situation in your own words.
+                    Type your situation above and press Find Support, or try one of the example prompts.
                   </p>
                 )}
 

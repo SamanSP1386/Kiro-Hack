@@ -21,7 +21,7 @@ export function ResultsList({ results, isFallback }: ResultsListProps) {
           That doesn't seem like a campus support question.
         </p>
         <p className="text-xs" style={{ color: "rgba(148,163,184,0.55)" }}>
-          Try describing a real situation — like stress, housing, food, tech issues, or academic struggles.
+          Try describing a real situation, like stress, housing, food, tech issues, or academic struggles.
         </p>
       </div>
     );

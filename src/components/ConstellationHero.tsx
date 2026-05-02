@@ -116,7 +116,7 @@ export default function ConstellationHero({
           className="fade-up delay-2 mt-6 max-w-lg leading-[1.8]"
           style={{ fontSize: "clamp(0.95rem, 2vw, 1.05rem)", color: "#94a3b8" }}
         >
-          Describe what you're going through — in your own words.{" "}
+          Describe what you're going through, in your own words.{" "}
           <span style={{ color: "#cbd5e1", fontWeight: 600 }}>PolyCare</span>{" "}
           matches you with the campus resources that can actually help.
         </p>
