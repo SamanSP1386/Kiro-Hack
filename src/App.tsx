@@ -7,51 +7,108 @@ import { SearchForm } from "./components/SearchForm";
 import { ResultsList } from "./components/ResultsList";
 import ResourcesView from "./components/ResourcesView";
 import SupportView from "./components/SupportView";
+import AboutView from "./components/AboutView";
 
 // ── Neuron network ────────────────────────────────────────────────────────────
+// Denser network: 60 nodes, smaller dots, more edges.
+// Entire SVG drifts as one unit — dots and lines always share the same
+// coordinate space so endpoints are always perfectly aligned.
 
 function NeuronLayer() {
   const nodes = [
-    { id:  1, cx:  80, cy:  90 }, { id:  2, cx: 240, cy:  50 },
-    { id:  3, cx: 430, cy: 160 }, { id:  4, cx: 620, cy:  70 },
-    { id:  5, cx: 800, cy: 190 }, { id:  6, cx: 940, cy:  80 },
-    { id:  7, cx: 140, cy: 310 }, { id:  8, cx: 360, cy: 390 },
-    { id:  9, cx: 560, cy: 330 }, { id: 10, cx: 730, cy: 410 },
-    { id: 11, cx: 890, cy: 350 }, { id: 12, cx:  55, cy: 490 },
-    { id: 13, cx: 290, cy: 540 }, { id: 14, cx: 490, cy: 570 },
-    { id: 15, cx: 670, cy: 510 }, { id: 16, cx: 850, cy: 560 },
-    { id: 17, cx: 970, cy: 460 }, { id: 18, cx: 190, cy: 210 },
-    { id: 19, cx: 510, cy: 260 }, { id: 20, cx: 810, cy: 300 },
-    { id: 21, cx: 100, cy: 720 }, { id: 22, cx: 300, cy: 680 },
-    { id: 23, cx: 500, cy: 760 }, { id: 24, cx: 700, cy: 700 },
-    { id: 25, cx: 900, cy: 780 }, { id: 26, cx: 200, cy: 900 },
-    { id: 27, cx: 450, cy: 950 }, { id: 28, cx: 650, cy: 880 },
-    { id: 29, cx: 850, cy: 960 }, { id: 30, cx:  60, cy:1050 },
-    { id: 31, cx: 350, cy:1100 }, { id: 32, cx: 600, cy:1080 },
-    { id: 33, cx: 800, cy:1150 }, { id: 34, cx: 960, cy:1060 },
-    { id: 35, cx: 150, cy:1250 }, { id: 36, cx: 420, cy:1300 },
-    { id: 37, cx: 680, cy:1280 }, { id: 38, cx: 900, cy:1350 },
+    // Row 0 — top strip
+    { id:  1, cx:  50, cy:  40 }, { id:  2, cx: 160, cy:  20 },
+    { id:  3, cx: 290, cy:  70 }, { id:  4, cx: 420, cy:  30 },
+    { id:  5, cx: 550, cy:  80 }, { id:  6, cx: 680, cy:  25 },
+    { id:  7, cx: 800, cy:  65 }, { id:  8, cx: 920, cy:  35 },
+    { id:  9, cx: 980, cy: 110 },
+    // Row 1
+    { id: 10, cx:  90, cy: 160 }, { id: 11, cx: 220, cy: 140 },
+    { id: 12, cx: 360, cy: 180 }, { id: 13, cx: 490, cy: 150 },
+    { id: 14, cx: 620, cy: 190 }, { id: 15, cx: 750, cy: 155 },
+    { id: 16, cx: 870, cy: 200 }, { id: 17, cx: 960, cy: 170 },
+    // Row 2
+    { id: 18, cx:  30, cy: 270 }, { id: 19, cx: 150, cy: 290 },
+    { id: 20, cx: 280, cy: 260 }, { id: 21, cx: 410, cy: 300 },
+    { id: 22, cx: 540, cy: 270 }, { id: 23, cx: 660, cy: 310 },
+    { id: 24, cx: 790, cy: 275 }, { id: 25, cx: 910, cy: 305 },
+    // Row 3
+    { id: 26, cx: 110, cy: 400 }, { id: 27, cx: 240, cy: 380 },
+    { id: 28, cx: 370, cy: 420 }, { id: 29, cx: 500, cy: 390 },
+    { id: 30, cx: 630, cy: 430 }, { id: 31, cx: 760, cy: 400 },
+    { id: 32, cx: 880, cy: 440 }, { id: 33, cx: 970, cy: 410 },
+    // Row 4
+    { id: 34, cx:  60, cy: 510 }, { id: 35, cx: 190, cy: 530 },
+    { id: 36, cx: 320, cy: 500 }, { id: 37, cx: 450, cy: 545 },
+    { id: 38, cx: 580, cy: 515 }, { id: 39, cx: 710, cy: 550 },
+    { id: 40, cx: 840, cy: 520 }, { id: 41, cx: 950, cy: 555 },
+    // Row 5 — mid
+    { id: 42, cx: 130, cy: 640 }, { id: 43, cx: 270, cy: 660 },
+    { id: 44, cx: 400, cy: 630 }, { id: 45, cx: 530, cy: 670 },
+    { id: 46, cx: 660, cy: 640 }, { id: 47, cx: 790, cy: 675 },
+    { id: 48, cx: 920, cy: 645 },
+    // Row 6
+    { id: 49, cx:  70, cy: 760 }, { id: 50, cx: 210, cy: 780 },
+    { id: 51, cx: 350, cy: 750 }, { id: 52, cx: 480, cy: 790 },
+    { id: 53, cx: 610, cy: 760 }, { id: 54, cx: 740, cy: 800 },
+    { id: 55, cx: 870, cy: 770 }, { id: 56, cx: 970, cy: 800 },
+    // Row 7
+    { id: 57, cx: 140, cy: 890 }, { id: 58, cx: 300, cy: 870 },
+    { id: 59, cx: 440, cy: 910 }, { id: 60, cx: 580, cy: 880 },
+    { id: 61, cx: 720, cy: 920 }, { id: 62, cx: 860, cy: 890 },
+    { id: 63, cx: 960, cy: 930 },
   ];
 
   const edges: [number, number][] = [
-    [1,2],[2,3],[3,4],[4,5],[5,6],
-    [1,7],[2,18],[3,19],[4,9],[5,10],[6,11],
-    [7,8],[8,9],[9,10],[10,11],
-    [7,13],[8,14],[9,15],[10,16],[11,17],
-    [12,13],[13,14],[14,15],[15,16],[16,17],
-    [18,19],[19,20],[18,8],[20,10],[12,7],[17,11],
-    [12,21],[13,22],[14,23],[15,24],[16,25],
-    [21,22],[22,23],[23,24],[24,25],
-    [21,26],[22,27],[23,28],[24,29],
-    [26,27],[27,28],[28,29],
-    [26,30],[27,31],[28,32],[29,33],[25,34],
-    [30,31],[31,32],[32,33],[33,34],
-    [30,35],[31,36],[32,37],[33,38],
-    [35,36],[36,37],[37,38],
+    // Row 0 horizontal
+    [1,2],[2,3],[3,4],[4,5],[5,6],[6,7],[7,8],[8,9],
+    // Row 0 → Row 1
+    [1,10],[2,11],[3,12],[4,13],[5,14],[6,15],[7,16],[8,17],[9,17],
+    // Row 1 horizontal
+    [10,11],[11,12],[12,13],[13,14],[14,15],[15,16],[16,17],
+    // Row 1 → Row 2
+    [10,18],[11,19],[12,20],[13,21],[14,22],[15,23],[16,24],[17,25],
+    // Row 2 horizontal
+    [18,19],[19,20],[20,21],[21,22],[22,23],[23,24],[24,25],
+    // Row 2 → Row 3
+    [18,26],[19,27],[20,27],[21,28],[22,29],[23,30],[24,31],[25,32],
+    // Row 3 horizontal
+    [26,27],[27,28],[28,29],[29,30],[30,31],[31,32],[32,33],
+    // Row 3 → Row 4
+    [26,34],[27,35],[28,36],[29,37],[30,38],[31,39],[32,40],[33,41],
+    // Row 4 horizontal
+    [34,35],[35,36],[36,37],[37,38],[38,39],[39,40],[40,41],
+    // Row 4 → Row 5
+    [34,42],[35,43],[36,43],[37,44],[38,45],[39,46],[40,47],[41,48],
+    // Row 5 horizontal
+    [42,43],[43,44],[44,45],[45,46],[46,47],[47,48],
+    // Row 5 → Row 6
+    [42,49],[43,50],[44,51],[45,52],[46,53],[47,54],[48,55],
+    // Row 6 horizontal
+    [49,50],[50,51],[51,52],[52,53],[53,54],[54,55],[55,56],
+    // Row 6 → Row 7
+    [49,57],[50,58],[51,58],[52,59],[53,60],[54,61],[55,62],[56,63],
+    // Row 7 horizontal
+    [57,58],[58,59],[59,60],[60,61],[61,62],[62,63],
+    // Diagonal cross-links for organic feel
+    [2,10],[4,12],[6,14],[8,16],
+    [11,20],[13,22],[15,24],
+    [19,28],[21,29],[23,31],
+    [27,36],[29,38],[31,40],
+    [35,44],[37,45],[39,47],
+    [43,52],[45,53],[47,55],
+    [50,59],[52,60],[54,62],
   ];
 
-  const flowSet = new Set(["2-3","4-5","8-9","13-14","19-20","22-23","27-28","31-32","36-37"]);
+  // A subset of edges that get the traveling-light animation
+  const flowSet = new Set([
+    "1-2","4-5","7-8","11-12","14-15","20-21","23-24",
+    "28-29","31-32","37-38","44-45","47-48","52-53","59-60","62-63",
+  ]);
+
   const nodeMap = Object.fromEntries(nodes.map(n => [n.id, n]));
+  // Smaller, more varied dot sizes
+  const dotR = (id: number) => id % 7 === 0 ? 2.2 : id % 4 === 0 ? 1.8 : 1.4;
   const nodeColor = (id: number) =>
     id % 3 === 0 ? "#67b8c8" : id % 3 === 1 ? "#8b9fd4" : "#7b7fc4";
 
@@ -60,20 +117,21 @@ function NeuronLayer() {
       aria-hidden="true"
       className="neuron-svg pointer-events-none fixed inset-0 w-full h-full"
       style={{ zIndex: 0 }}
-      viewBox="0 0 1000 1400"
+      viewBox="0 0 1000 1000"
       preserveAspectRatio="xMidYMid slice"
     >
       <defs>
         <filter id="nGlow" x="-80%" y="-80%" width="260%" height="260%">
-          <feGaussianBlur stdDeviation="3.5" result="blur" />
+          <feGaussianBlur stdDeviation="2.5" result="blur" />
           <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
         </filter>
         <filter id="lGlow" x="-5%" y="-200%" width="110%" height="500%">
-          <feGaussianBlur stdDeviation="0.8" result="blur" />
+          <feGaussianBlur stdDeviation="0.6" result="blur" />
           <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
         </filter>
       </defs>
 
+      {/* Lines first — nodes render on top */}
       {edges.map(([a, b]) => {
         const na = nodeMap[a], nb = nodeMap[b];
         if (!na || !nb) return null;
@@ -84,29 +142,31 @@ function NeuronLayer() {
         return (
           <g key={key}>
             <line x1={na.cx} y1={na.cy} x2={nb.cx} y2={nb.cy}
-              stroke="#4a5080" strokeWidth="0.9" className="n-line"
-              style={{ animationDelay: `${((a + b) * 0.23) % 6}s` }}
+              stroke="#4a5080" strokeWidth="0.7" className="n-line"
+              style={{ animationDelay: `${((a + b) * 0.19) % 6}s` }}
               filter="url(#lGlow)" />
             {isFlow && (
               <line x1={na.cx} y1={na.cy} x2={nb.cx} y2={nb.cy}
-                stroke="#5a8aaa" strokeWidth="1.4"
-                strokeDasharray={`${len * 0.25} ${len}`}
+                stroke="#5a8aaa" strokeWidth="1.1"
+                strokeDasharray={`${len * 0.22} ${len}`}
                 className="n-flow"
-                style={{ animationDelay: `${((a * b) * 0.17) % 5}s`, animationDuration: `${4.5 + (a % 3) * 0.8}s` }}
+                style={{ animationDelay: `${((a * b) * 0.13) % 5}s`, animationDuration: `${4 + (a % 4) * 0.6}s` }}
                 filter="url(#lGlow)" />
             )}
           </g>
         );
       })}
 
+      {/* Nodes on top of lines */}
       {nodes.map((n) => {
         const col = nodeColor(n.id);
+        const r = dotR(n.id);
         return (
           <g key={n.id}>
-            <circle cx={n.cx} cy={n.cy} r={13} fill={col} fillOpacity={0.07} />
-            <circle cx={n.cx} cy={n.cy} r={n.id % 5 === 0 ? 3.8 : 2.8}
+            <circle cx={n.cx} cy={n.cy} r={r + 6} fill={col} fillOpacity={0.05} />
+            <circle cx={n.cx} cy={n.cy} r={r}
               fill={col} className="n-dot"
-              style={{ animationDelay: `${(n.id * 0.41) % 4}s` }}
+              style={{ animationDelay: `${(n.id * 0.37) % 4}s` }}
               filter="url(#nGlow)" />
           </g>
         );
@@ -117,7 +177,7 @@ function NeuronLayer() {
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
-type View = "hero" | "match" | "resources" | "support";
+type View = "hero" | "match" | "resources" | "support" | "about";
 
 // ── App ───────────────────────────────────────────────────────────────────────
 
@@ -231,6 +291,7 @@ export default function App() {
           onStartMatching={() => navigateTo("match")}
           onGoResources={()   => navigateTo("resources")}
           onGoSupport={()     => navigateTo("support")}
+          onGoAbout={()       => navigateTo("about")}
           isExiting={false}
         />
       </div>
@@ -320,6 +381,10 @@ export default function App() {
 
           {activeView === "support" && (
             <SupportView onGoHome={goHome} onGoMatch={() => navigateTo("match")} />
+          )}
+
+          {activeView === "about" && (
+            <AboutView onGoHome={goHome} onGoMatch={() => navigateTo("match")} />
           )}
         </div>
       )}

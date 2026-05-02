@@ -1,14 +1,16 @@
 /**
  * ConstellationHero.tsx
  *
- * Full-viewport hero. Navbar buttons have distinct destinations.
- * "support" word uses a solid accent color — no gradient text blur.
+ * Full-viewport hero. Navbar: Resources, Support, About.
+ * Match button removed (duplicated by the main CTA).
+ * Brand text uses a tech-inspired CSS style.
  */
 
 interface ConstellationHeroProps {
   onStartMatching: () => void;
   onGoResources:   () => void;
   onGoSupport:     () => void;
+  onGoAbout:       () => void;
   isExiting:       boolean;
 }
 
@@ -26,11 +28,13 @@ export default function ConstellationHero({
   onStartMatching,
   onGoResources,
   onGoSupport,
+  onGoAbout,
   isExiting,
 }: ConstellationHeroProps) {
 
+  // Slightly larger nav buttons — px-5 py-2.5 instead of px-4 py-2
   const navBtnClass = `
-    px-4 py-2 rounded-lg text-sm font-medium
+    px-5 py-2.5 rounded-lg text-sm font-medium
     transition-colors duration-200
     hover:text-white hover:bg-white/[0.09]
     focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-400
@@ -40,23 +44,20 @@ export default function ConstellationHero({
     <section
       aria-label="PolyCare hero"
       className={`relative w-full min-h-screen flex flex-col
-        ${isExiting ? "hero-exiting pointer-events-none" : ""}`}
+        ${isExiting ? "pointer-events-none" : ""}`}
     >
       {/* ── Nav ── */}
       <nav
         aria-label="Main navigation"
         className="relative z-10 flex items-center justify-between px-6 py-5 sm:px-10 lg:px-16"
       >
-        <span className="text-xl font-extrabold tracking-tight text-white select-none">
-          Poly<span style={{ color: "#60a5fa" }}>Care</span>
+        {/* Brand — tech/robot-inspired via CSS class */}
+        <span className="brand-logo select-none">
+          POLY<span className="brand-accent">CARE</span>
         </span>
 
+        {/* Desktop nav — no Match button */}
         <ul className="hidden sm:flex items-center gap-1" role="list">
-          <li>
-            <button type="button" onClick={onStartMatching} className={navBtnClass} style={{ color: "#cbd5e1" }}>
-              Match
-            </button>
-          </li>
           <li>
             <button type="button" onClick={onGoResources} className={navBtnClass} style={{ color: "#cbd5e1" }}>
               Resources
@@ -67,12 +68,18 @@ export default function ConstellationHero({
               Support
             </button>
           </li>
+          <li>
+            <button type="button" onClick={onGoAbout} className={navBtnClass} style={{ color: "#cbd5e1" }}>
+              About
+            </button>
+          </li>
         </ul>
 
         {/* Mobile nav */}
         <div className="flex sm:hidden items-center gap-1">
-          <button type="button" onClick={onStartMatching} className="px-3 py-1.5 rounded-lg text-xs font-medium text-white/70 hover:text-white hover:bg-white/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-400">
-            Match
+          <button type="button" onClick={onGoAbout}
+            className="px-3 py-1.5 rounded-lg text-xs font-medium text-white/70 hover:text-white hover:bg-white/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-400">
+            About
           </button>
         </div>
       </nav>
@@ -91,11 +98,7 @@ export default function ConstellationHero({
           Cal Poly Student Support
         </div>
 
-        {/* Headline
-            FIX: "support" uses a solid color, not gradient text.
-            Gradient text (WebkitTextFillColor: transparent) causes subpixel
-            blur on some browsers when inside a backdrop-blur ancestor.
-            Solid #7eb8e8 is crisp, readable, and visually distinct. */}
+        {/* Headline */}
         <h1
           className="fade-up delay-1 max-w-3xl text-white"
           style={{

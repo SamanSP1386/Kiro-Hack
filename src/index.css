@@ -14,6 +14,21 @@ html, body {
   background: #0a1020;
 }
 
+/* ── Brand logo — tech/geometric style ────────────────────────────────────── */
+.brand-logo {
+  font-family: 'Inter', ui-monospace, 'Cascadia Code', 'Courier New', monospace;
+  font-size: 1.25rem;
+  font-weight: 900;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #e2e8f0;
+  line-height: 1;
+}
+.brand-accent {
+  color: #60a5fa;
+  letter-spacing: 0.14em;
+}
+
 /* ════════════════════════════════════════════════════════════════════════════
    BACKGROUND
    ════════════════════════════════════════════════════════════════════════════ */
