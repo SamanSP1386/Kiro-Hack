@@ -3,3 +3,5 @@ dist/
 .vite/
 .vscode/
 .DS_Store
+
+.env

@@ -1,9 +1,10 @@
 import { useState, useEffect, useRef } from "react";
 import type { MatchedResource } from "./types/resource";
 import { findResources, getFallbackResources } from "./utils/matcher";
+import { findResourcesWithAI } from "./utils/aiMatcher";
+import ConstellationHero from "./components/ConstellationHero";
 import { SearchForm } from "./components/SearchForm";
 import { ResultsList } from "./components/ResultsList";
-import ConstellationHero from "./components/ConstellationHero";
 import ResourcesView from "./components/ResourcesView";
 import SupportView from "./components/SupportView";
 
@@ -128,7 +129,7 @@ export default function App() {
   const [results,     setResults]     = useState<MatchedResource[]>([]);
   const [isFallback,  setIsFallback]  = useState(false);
   const [hasSearched, setHasSearched] = useState(false);
-
+  const [isLoading, setIsLoading] = useState(false);
   // View / transition state
   const [view,        setView]        = useState<View>("hero");
   const [heroExiting, setHeroExiting] = useState(false);
@@ -138,17 +139,38 @@ export default function App() {
   const sectionRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-  function handleSubmit() {
-    const matched     = findResources(input);
-    const allFallback = matched.every((r) => r.score === 0);
-    if (!input.trim()) {
-      setResults(getFallbackResources());
-      setIsFallback(true);
-    } else {
-      setResults(matched);
-      setIsFallback(allFallback);
+  async function handleSubmit() {
+    if (isLoading) return;
+    setIsLoading(true);
+
+    try {
+      // Empty input → show fallback resources immediately
+      if (!input.trim()) {
+        setResults(getFallbackResources());
+        setIsFallback(true);
+        setHasSearched(true);
+        return;
+      }
+
+      // Try AI matcher first
+      const aiResults = await findResourcesWithAI(input);
+
+      if (aiResults && aiResults.length > 0) {
+        // AI succeeded — use its results
+        setResults(aiResults);
+        setIsFallback(false);
+      } else {
+        // AI failed or unavailable — fall back to keyword matcher silently
+        const keywordResults = findResources(input);
+        const allFallback = keywordResults.every((r) => r.score === 0);
+        setResults(keywordResults);
+        setIsFallback(allFallback);
+      }
+
+      setHasSearched(true);
+    } finally {
+      setIsLoading(false);
     }
-    setHasSearched(true);
   }
 
   // Navigate to any non-hero view with the smooth downward transition
@@ -257,22 +279,37 @@ export default function App() {
                   border: "1px solid rgba(80,120,200,0.22)",
                   boxShadow: "0 20px 60px rgba(0,0,0,0.50), inset 0 1px 0 rgba(255,255,255,0.05)",
                 }}>
-                  <SearchForm value={input} onChange={setInput} onSubmit={handleSubmit} textareaRef={textareaRef} />
+                  <SearchForm
+                    value={input}
+                    onChange={setInput}
+                    onSubmit={handleSubmit}
+                    textareaRef={textareaRef}
+                    isLoading={isLoading}
+                  />
                 </div>
 
-                {!hasSearched && (
+                {/* Empty state */}
+                {!hasSearched && !isLoading && (
                   <p className="mt-5 text-center text-xs" style={{ color: "rgba(148,163,184,0.5)" }}>
                     Try one of the example prompts, or describe your situation in your own words.
                   </p>
                 )}
 
-                {hasSearched && (
+                {/* Loading state */}
+                {isLoading && (
+                  <p className="mt-5 text-center text-xs animate-pulse" style={{ color: "rgba(148,163,184,0.7)" }}>
+                    Finding the right support for you...
+                  </p>
+                )}
+
+                {/* Results */}
+                {hasSearched && !isLoading && (
                   <div className="mt-8 pb-4">
                     <ResultsList results={results} isFallback={isFallback} />
                   </div>
                 )}
+                </div>
               </div>
-            </div>
           )}
 
           {/* ── Resources view ── */}

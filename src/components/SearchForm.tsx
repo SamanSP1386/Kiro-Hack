@@ -5,6 +5,7 @@ interface SearchFormProps {
   onChange: (value: string) => void;
   onSubmit: () => void;
   textareaRef?: RefObject<HTMLTextAreaElement>;
+  isLoading?: boolean;
 }
 
 const SAMPLE_PROMPTS = [
@@ -13,10 +14,16 @@ const SAMPLE_PROMPTS = [
   "I'm overwhelmed and falling behind in class.",
 ];
 
-export function SearchForm({ value, onChange, onSubmit, textareaRef }: SearchFormProps) {
+export function SearchForm({
+  value,
+  onChange,
+  onSubmit,
+  textareaRef,
+  isLoading = false,
+}: SearchFormProps) {
   function handleSubmit(e: FormEvent) {
     e.preventDefault();
-    onSubmit();
+    if (!isLoading) onSubmit();
   }
 
   return (
@@ -71,7 +78,11 @@ export function SearchForm({ value, onChange, onSubmit, textareaRef }: SearchFor
           <button
             key={prompt}
             type="button"
-            onClick={() => { onChange(prompt); setTimeout(onSubmit, 0); }}
+            onClick={() => {
+              if (isLoading) return;
+              onChange(prompt);
+              setTimeout(onSubmit, 0);
+            }}
             className="rounded-full px-3 py-1.5 text-xs font-medium
               backdrop-blur-sm
               transition-all duration-150
@@ -101,11 +112,13 @@ export function SearchForm({ value, onChange, onSubmit, textareaRef }: SearchFor
       {/* Submit */}
       <button
         type="submit"
+        disabled={isLoading}
         className="group w-full inline-flex items-center justify-center gap-2
           rounded-full px-6 py-3 text-sm font-semibold text-white
           transition-all duration-[220ms]
           hover:-translate-y-[2px] active:translate-y-0 active:scale-[0.98]
           focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-300
+          disabled:opacity-70 disabled:cursor-not-allowed
           focus-visible:ring-offset-2 focus-visible:ring-offset-transparent"
         style={{
           background: "linear-gradient(135deg, #3b82f6 0%, #6366f1 100%)",
@@ -118,12 +131,14 @@ export function SearchForm({ value, onChange, onSubmit, textareaRef }: SearchFor
           (e.currentTarget as HTMLButtonElement).style.boxShadow = "0 4px 20px rgba(99,102,241,0.40)";
         }}
       >
-        Find Support
-        <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true"
-          className="transition-transform duration-200 group-hover:translate-x-0.5">
-          <path d="M2 7h10M8 3l4 4-4 4" stroke="currentColor" strokeWidth="1.8"
-            strokeLinecap="round" strokeLinejoin="round" />
-        </svg>
+        {isLoading ? "Finding support..." : "Find Support"}
+        {!isLoading && (
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true"
+            className="transition-transform duration-200 group-hover:translate-x-0.5">
+            <path d="M2 7h10M8 3l4 4-4 4" stroke="currentColor" strokeWidth="1.8"
+              strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        )}
       </button>
     </form>
   );
