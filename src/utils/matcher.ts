@@ -1,60 +1,80 @@
+/**
+ * matcher.ts
+ *
+ * Single stable entry point for the PolyCare resource matching engine.
+ *
+ * Pipeline for every query:
+ *   1. Normalize input (lowercase, strip punctuation, collapse spaces)
+ *   2. Detect matched categories from keywordMap
+ *   3. Score each resource (tag hits + category alignment + description overlap)
+ *   4. Format each result into a MatchedResource
+ *   5. Sort by score descending, with name as a stable alphabetical tiebreaker
+ *   6. Return top 3 — or fallback resources if nothing scored above zero
+ *
+ * Types come from src/types/resource.ts — do not redefine them here.
+ * Fallback IDs come from src/data/expectedResults.ts — do not hardcode them here.
+ */
+
 import { resources } from "../data/resources";
 import keywordMap from "../data/keywordMap.json";
 import { FALLBACK_RESOURCE_IDS } from "../data/expectedResults";
-import type { Resource, MatchedResource } from "../types/resource";
+import type { Resource, MatchedResource, ResourceCategory } from "../types/resource";
 
-// Types are defined in src/types/resource.ts — import from there, not here.
+// ── Constants ────────────────────────────────────────────────────────────────
 
-// ── Category mapping ─────────────────────────────────────────────────────────
+const TOP_N = 3;
+
+const FALLBACK_REASON =
+  "This is a good place to start — they can help point you in the right direction.";
 
 /**
- * Maps keyword categories (from keywordMap.json) to resource category IDs
- * (from resources.json). One keyword category can map to multiple resource
- * categories so that e.g. "financial" also surfaces "basic-needs" resources.
+ * Maps a detected keyword category to the resource categories it should
+ * surface. Defined here so scoring stays self-contained in this file.
  */
-const categoryToResourceCategories: Record<string, string[]> = {
-  food: ["food", "basic-needs"],
-  financial: ["financial", "basic-needs"],
+const categoryToResourceCategories: Record<string, ResourceCategory[]> = {
+  food:            ["food", "basic-needs"],
+  financial:       ["financial", "basic-needs"],
   "mental-health": ["mental-health"],
-  crisis: ["mental-health"],
-  academic: ["academic"],
-  advising: ["academic"],
-  technology: ["technology"],
-  housing: ["housing", "basic-needs"],
-  accessibility: ["accessibility"],
-  career: ["career"],
-  "basic-needs": ["basic-needs", "food", "financial", "housing"],
+  crisis:          ["mental-health"],
+  academic:        ["academic"],
+  advising:        ["academic"],
+  technology:      ["technology"],
+  housing:         ["housing", "basic-needs"],
+  accessibility:   ["accessibility"],
+  career:          ["career"],
+  "basic-needs":   ["basic-needs", "food", "financial", "housing"],
 };
 
-const URGENT_WORDS = [
-  "urgent",
-  "emergency",
-  "now",
-  "today",
-  "immediately",
-  "asap",
-  "crisis",
-  "desperate",
-  "can't",
-  "cannot",
-];
-
-// ── Internal helpers ─────────────────────────────────────────────────────────
+// ── Step 1: Normalize ────────────────────────────────────────────────────────
 
 /**
- * Detects which keyword categories are present in the user's input by checking
- * every keyword in keywordMap.json against the lowercased input string.
+ * Lowercases, strips punctuation, collapses whitespace, and trims.
+ * All matching runs against this output — never against raw input.
  */
-function detectCategories(inputLower: string): string[] {
+function normalizeText(text: string): string {
+  return text
+    .toLowerCase()
+    .replace(/[^a-z0-9\s]/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+// ── Step 2: Detect categories ────────────────────────────────────────────────
+
+/**
+ * Scans every keyword in keywordMap against the normalized input.
+ * Returns each category that had at least one keyword hit.
+ */
+function detectCategories(normalized: string): string[] {
   const matched = new Set<string>();
 
   for (const [category, keywords] of Object.entries(
     keywordMap as Record<string, string[]>
   )) {
     for (const keyword of keywords) {
-      if (inputLower.includes(keyword.toLowerCase())) {
+      if (normalized.includes(keyword.toLowerCase())) {
         matched.add(category);
-        break;
+        break; // one hit per category is enough
       }
     }
   }
@@ -62,110 +82,96 @@ function detectCategories(inputLower: string): string[] {
   return Array.from(matched);
 }
 
+// ── Step 3: Score ────────────────────────────────────────────────────────────
+
 /**
- * Scores a single resource against the user's input.
+ * Scoring rules:
+ *   +2  per resource tag found in the normalized input
+ *   +3  if the resource's category aligns with a detected keyword category
+ *   +1  per meaningful word from description or best_for found in input (max 3)
  *
- * Scoring weights:
- *  +2 per direct tag match in raw input
- *  +3 per matched keyword category that maps to this resource's category
- *  +2 urgency boost when input sounds urgent and resource is high-urgency
+ * A Set tracks already-counted terms to prevent double-scoring.
  */
 function scoreResource(
   resource: Resource,
-  inputLower: string,
+  normalized: string,
   matchedCategories: string[]
 ): number {
   let score = 0;
+  const seen = new Set<string>();
 
-  // Direct tag hits
+  // Rule 1: tag hits
   for (const tag of resource.tags) {
-    if (inputLower.includes(tag.toLowerCase())) {
+    const t = tag.toLowerCase();
+    if (normalized.includes(t) && !seen.has(t)) {
       score += 2;
+      seen.add(t);
     }
   }
 
-  // Category alignment
+  // Rule 2: category alignment — awarded once per resource
+  const resourceCats = categoryToResourceCategories[resource.category] ?? [];
   for (const cat of matchedCategories) {
-    const resourceCats = categoryToResourceCategories[cat] ?? [];
-    if (resourceCats.includes(resource.category)) {
+    if (cat === resource.category || resourceCats.includes(cat as ResourceCategory)) {
       score += 3;
+      break;
     }
   }
 
-  // Urgency boost
-  const isUrgentInput = URGENT_WORDS.some((w) => inputLower.includes(w));
-  if (resource.urgency === "high" && isUrgentInput) {
-    score += 2;
+  // Rule 3: description / best_for overlap (max +3)
+  const extraText = [resource.description, resource.best_for].join(" ")
+    .toLowerCase()
+    .replace(/[^a-z0-9\s]/g, "")
+    .split(/\s+/)
+    .filter((w) => w.length > 4); // skip short filler words
+
+  let overlapPoints = 0;
+  for (const word of extraText) {
+    if (overlapPoints >= 3) break;
+    if (normalized.includes(word) && !seen.has(word)) {
+      score += 1;
+      overlapPoints++;
+      seen.add(word);
+    }
   }
 
   return score;
 }
 
-/**
- * Builds a warm, plain-language reason why a resource matched.
- * Steering standard: user-facing text must be calm, supportive, and plain —
- * not robotic or clinical.
- */
-function buildMatchReason(resource: Resource, userInput: string): string {
-  const inputLower = userInput.toLowerCase();
+// ── Step 4: Format ───────────────────────────────────────────────────────────
 
-  const matchedTags = resource.tags.filter((tag) =>
-    inputLower.includes(tag.toLowerCase())
+/**
+ * Builds a warm, plain-language match reason using the resource's own
+ * best_for text — already written in calm, student-friendly language.
+ * Falls back to a generic message when no tags matched directly.
+ */
+function buildMatchReason(resource: Resource, normalized: string): string {
+  const hasTagMatch = resource.tags.some((tag) =>
+    normalized.includes(tag.toLowerCase())
   );
 
-  if (matchedTags.length > 0) {
-    // Use the resource's own best_for text as the reason — it's already written
-    // in plain student language and is more reassuring than listing matched tags.
-    return resource.best_for;
-  }
-
-  return "This might be a helpful place to start given what you're going through.";
+  return hasTagMatch
+    ? resource.best_for
+    : "This might be a helpful place to start given what you're going through.";
 }
 
-// ── Fallback resources ───────────────────────────────────────────────────────
-
-// FALLBACK_RESOURCE_IDS is imported from expectedResults.ts — single source of truth
-
-const FALLBACK_REASON =
-  "This is a good place to start — they can help point you in the right direction.";
-
-// ── Public API ───────────────────────────────────────────────────────────────
+// ── Step 5: Sort ─────────────────────────────────────────────────────────────
 
 /**
- * Takes a plain-text student problem description and returns the top N
- * matching campus resources, sorted by relevance score (highest first).
- *
- * Falls back to the three default resources (Basic Needs Office, Academic
- * Advising, Counseling Services) when no resource scores above zero.
- *
- * @param userInput - The student's free-text problem description
- * @param topN      - Maximum number of results to return (default 3)
+ * Primary sort: score descending (higher is better).
+ * Tiebreaker: resource name ascending (alphabetical, stable across runs).
  */
-export function findResources(
-  userInput: string,
-  topN: number = 3
-): MatchedResource[] {
-  if (!userInput || userInput.trim().length === 0) return getFallbackResources();
-
-  const inputLower = userInput.toLowerCase();
-  const matchedCategories = detectCategories(inputLower);
-
-  const scored = resources
-    .map((resource) => ({
-      ...resource,
-      score: scoreResource(resource, inputLower, matchedCategories),
-      matchReason: buildMatchReason(resource, userInput),
-    }))
-    .filter((r) => r.score > 0)
-    .sort((a, b) => b.score - a.score)
-    .slice(0, topN);
-
-  return scored.length > 0 ? scored : getFallbackResources();
+function sortResults(a: MatchedResource, b: MatchedResource): number {
+  if (b.score !== a.score) return b.score - a.score;
+  return a.name.localeCompare(b.name);
 }
+
+// ── Fallback ─────────────────────────────────────────────────────────────────
 
 /**
  * Returns the three default fallback resources with a generic match reason.
- * Used when the user's input doesn't match any resource tags or categories.
+ * Triggered when input is empty or no resource scores above zero.
+ * IDs are sourced from expectedResults.ts — not hardcoded here.
  */
 export function getFallbackResources(): MatchedResource[] {
   return FALLBACK_RESOURCE_IDS.reduce<MatchedResource[]>((acc, id) => {
@@ -175,4 +181,36 @@ export function getFallbackResources(): MatchedResource[] {
     }
     return acc;
   }, []);
+}
+
+// ── Public API ───────────────────────────────────────────────────────────────
+
+/**
+ * Takes a plain-text student problem description and returns the top 3
+ * matching campus resources, sorted by relevance score.
+ *
+ * Returns fallback resources when input is empty or nothing scores above zero.
+ *
+ * @param userInput - The student's free-text problem description
+ * @returns Array of up to 3 MatchedResource objects
+ */
+export function findResources(userInput: string): MatchedResource[] {
+  if (!userInput || userInput.trim().length === 0) {
+    return getFallbackResources();
+  }
+
+  const normalized = normalizeText(userInput);
+  const matchedCategories = detectCategories(normalized);
+
+  const scored = resources
+    .map((resource) => ({
+      ...resource,
+      score: scoreResource(resource, normalized, matchedCategories),
+      matchReason: buildMatchReason(resource, normalized),
+    }))
+    .filter((r) => r.score > 0)
+    .sort(sortResults)
+    .slice(0, TOP_N);
+
+  return scored.length > 0 ? scored : getFallbackResources();
 }
