@@ -87,20 +87,9 @@ export default function ConstellationHero({
       {/* ── Hero body ── */}
       <div className="relative z-10 flex flex-1 flex-col items-center justify-center px-6 pb-16 pt-4 text-center">
 
-        {/* Eyebrow */}
-        <div
-          className="fade-up mb-7 inline-flex items-center gap-2 rounded-full px-4 py-1.5
-            text-xs font-semibold uppercase tracking-[0.18em]
-            border border-white/[0.10] bg-white/[0.06] backdrop-blur-sm"
-          style={{ color: "#8bb8d0" }}
-        >
-          <span aria-hidden="true" className="w-1.5 h-1.5 rounded-full inline-block" style={{ background: "#67b8c8" }} />
-          Cal Poly Student Support
-        </div>
-
-        {/* Headline */}
+        {/* Headline — no eyebrow above, headline leads directly */}
         <h1
-          className="fade-up delay-1 max-w-3xl text-white"
+          className="fade-up max-w-3xl text-white"
           style={{
             fontSize: "clamp(2.4rem, 6.5vw, 4rem)",
             fontWeight: 900,
@@ -116,7 +105,7 @@ export default function ConstellationHero({
 
         {/* Subtext */}
         <p
-          className="fade-up delay-2 mt-6 max-w-lg leading-[1.8]"
+          className="fade-up delay-1 mt-6 max-w-lg leading-[1.8]"
           style={{ fontSize: "clamp(0.95rem, 2vw, 1.05rem)", color: "#94a3b8" }}
         >
           Describe what you're going through, in your own words.{" "}
@@ -125,7 +114,7 @@ export default function ConstellationHero({
         </p>
 
         {/* CTA */}
-        <div className="fade-up delay-3 mt-10">
+        <div className="fade-up delay-2 mt-10">
           <button
             type="button"
             onClick={onStartMatching}
@@ -153,7 +142,7 @@ export default function ConstellationHero({
         </div>
 
         {/* Resource pills */}
-        <div className="fade-up delay-4 mt-12 flex flex-wrap justify-center gap-2" aria-label="Supported resource types">
+        <div className="fade-up delay-3 mt-12 flex flex-wrap justify-center gap-2" aria-label="Supported resource types">
           {PILLS.map((pill) => (
             <span
               key={pill.id}

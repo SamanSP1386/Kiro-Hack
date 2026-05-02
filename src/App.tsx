@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import type { MatchedResource } from "./types/resource";
 import { findResources } from "./utils/matcher";
 import { findResourcesWithAI } from "./utils/aiMatcher";
@@ -10,11 +10,61 @@ import SupportView from "./components/SupportView";
 import AboutView from "./components/AboutView";
 
 // ── Neuron network ────────────────────────────────────────────────────────────
-// Denser network: 60 nodes, smaller dots, more edges.
-// Entire SVG drifts as one unit — dots and lines always share the same
-// coordinate space so endpoints are always perfectly aligned.
+// Denser network: 63 nodes, smaller dots, more edges.
+// Mouse-reactive: a radial highlight follows the cursor via rAF + DOM refs.
+// No React state updates on mousemove — zero re-render cost.
 
 function NeuronLayer() {
+  const svgRef  = useRef<SVGSVGElement>(null);
+  const gradRef = useRef<SVGRadialGradientElement>(null);
+  const rafRef  = useRef<number>(0);
+  // Current cursor position in SVG viewBox coordinates (0–1000)
+  const cursorRef = useRef({ x: -9999, y: -9999 });
+
+  // rAF-throttled pointer handler — updates gradient cx/cy directly on the DOM
+  const handlePointerMove = useCallback((e: PointerEvent) => {
+    cancelAnimationFrame(rafRef.current);
+    rafRef.current = requestAnimationFrame(() => {
+      const svg = svgRef.current;
+      const grad = gradRef.current;
+      if (!svg || !grad) return;
+      const rect = svg.getBoundingClientRect();
+      // Map screen coords → viewBox coords (0–1000)
+      const vx = ((e.clientX - rect.left) / rect.width)  * 1000;
+      const vy = ((e.clientY - rect.top)  / rect.height) * 1000;
+      cursorRef.current = { x: vx, y: vy };
+      grad.setAttribute("cx", String(vx));
+      grad.setAttribute("cy", String(vy));
+      grad.setAttribute("fx", String(vx));
+      grad.setAttribute("fy", String(vy));
+    });
+  }, []);
+
+  const handlePointerLeave = useCallback(() => {
+    const grad = gradRef.current;
+    if (!grad) return;
+    cursorRef.current = { x: -9999, y: -9999 };
+    grad.setAttribute("cx", "-9999");
+    grad.setAttribute("cy", "-9999");
+    grad.setAttribute("fx", "-9999");
+    grad.setAttribute("fy", "-9999");
+  }, []);
+
+  // Attach/detach pointer listeners on the document (not the SVG — it's pointer-events:none)
+  useEffect(() => {
+    // Skip on touch-only or reduced-motion
+    const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
+    if (mq.matches) return;
+
+    document.addEventListener("pointermove", handlePointerMove, { passive: true });
+    document.addEventListener("pointerleave", handlePointerLeave);
+    return () => {
+      document.removeEventListener("pointermove", handlePointerMove);
+      document.removeEventListener("pointerleave", handlePointerLeave);
+      cancelAnimationFrame(rafRef.current);
+    };
+  }, [handlePointerMove, handlePointerLeave]);
+
   const nodes = [
     // Row 0 — top strip
     { id:  1, cx:  50, cy:  40 }, { id:  2, cx: 160, cy:  20 },
@@ -60,37 +110,21 @@ function NeuronLayer() {
   ];
 
   const edges: [number, number][] = [
-    // Row 0 horizontal
     [1,2],[2,3],[3,4],[4,5],[5,6],[6,7],[7,8],[8,9],
-    // Row 0 → Row 1
     [1,10],[2,11],[3,12],[4,13],[5,14],[6,15],[7,16],[8,17],[9,17],
-    // Row 1 horizontal
     [10,11],[11,12],[12,13],[13,14],[14,15],[15,16],[16,17],
-    // Row 1 → Row 2
     [10,18],[11,19],[12,20],[13,21],[14,22],[15,23],[16,24],[17,25],
-    // Row 2 horizontal
     [18,19],[19,20],[20,21],[21,22],[22,23],[23,24],[24,25],
-    // Row 2 → Row 3
     [18,26],[19,27],[20,27],[21,28],[22,29],[23,30],[24,31],[25,32],
-    // Row 3 horizontal
     [26,27],[27,28],[28,29],[29,30],[30,31],[31,32],[32,33],
-    // Row 3 → Row 4
     [26,34],[27,35],[28,36],[29,37],[30,38],[31,39],[32,40],[33,41],
-    // Row 4 horizontal
     [34,35],[35,36],[36,37],[37,38],[38,39],[39,40],[40,41],
-    // Row 4 → Row 5
     [34,42],[35,43],[36,43],[37,44],[38,45],[39,46],[40,47],[41,48],
-    // Row 5 horizontal
     [42,43],[43,44],[44,45],[45,46],[46,47],[47,48],
-    // Row 5 → Row 6
     [42,49],[43,50],[44,51],[45,52],[46,53],[47,54],[48,55],
-    // Row 6 horizontal
     [49,50],[50,51],[51,52],[52,53],[53,54],[54,55],[55,56],
-    // Row 6 → Row 7
     [49,57],[50,58],[51,58],[52,59],[53,60],[54,61],[55,62],[56,63],
-    // Row 7 horizontal
     [57,58],[58,59],[59,60],[60,61],[61,62],[62,63],
-    // Diagonal cross-links for organic feel
     [2,10],[4,12],[6,14],[8,16],
     [11,20],[13,22],[15,24],
     [19,28],[21,29],[23,31],
@@ -100,20 +134,19 @@ function NeuronLayer() {
     [50,59],[52,60],[54,62],
   ];
 
-  // A subset of edges that get the traveling-light animation
   const flowSet = new Set([
     "1-2","4-5","7-8","11-12","14-15","20-21","23-24",
     "28-29","31-32","37-38","44-45","47-48","52-53","59-60","62-63",
   ]);
 
   const nodeMap = Object.fromEntries(nodes.map(n => [n.id, n]));
-  // Smaller, more varied dot sizes
   const dotR = (id: number) => id % 7 === 0 ? 2.2 : id % 4 === 0 ? 1.8 : 1.4;
   const nodeColor = (id: number) =>
     id % 3 === 0 ? "#67b8c8" : id % 3 === 1 ? "#8b9fd4" : "#7b7fc4";
 
   return (
     <svg
+      ref={svgRef}
       aria-hidden="true"
       className="neuron-svg pointer-events-none fixed inset-0 w-full h-full"
       style={{ zIndex: 0 }}
@@ -129,9 +162,22 @@ function NeuronLayer() {
           <feGaussianBlur stdDeviation="0.6" result="blur" />
           <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
         </filter>
+        {/*
+          Mouse-highlight radial gradient.
+          cx/cy are updated via JS on the <radialGradient> element directly —
+          no React re-renders. The gradient is applied as a fill on a full-size
+          rect that sits above the lines but below the dots, acting as a
+          soft luminance mask via screen blend mode.
+        */}
+        <radialGradient id="mouseHighlight" ref={gradRef} gradientUnits="userSpaceOnUse"
+          cx="-9999" cy="-9999" r="160" fx="-9999" fy="-9999">
+          <stop offset="0%"   stopColor="#7dd3fc" stopOpacity="0.18" />
+          <stop offset="60%"  stopColor="#7dd3fc" stopOpacity="0.06" />
+          <stop offset="100%" stopColor="#7dd3fc" stopOpacity="0"    />
+        </radialGradient>
       </defs>
 
-      {/* Lines first — nodes render on top */}
+      {/* Lines */}
       {edges.map(([a, b]) => {
         const na = nodeMap[a], nb = nodeMap[b];
         if (!na || !nb) return null;
@@ -157,7 +203,20 @@ function NeuronLayer() {
         );
       })}
 
-      {/* Nodes on top of lines */}
+      {/*
+        Mouse highlight overlay — sits above lines, below dots.
+        A full-viewport rect filled with the radialGradient, blended with
+        "screen" so it only brightens, never darkens.
+        The gradient's cx/cy are updated directly on the DOM element via rAF.
+      */}
+      <rect
+        className="mouse-highlight-rect"
+        x="0" y="0" width="1000" height="1000"
+        fill="url(#mouseHighlight)"
+        style={{ mixBlendMode: "screen", pointerEvents: "none" }}
+      />
+
+      {/* Nodes on top */}
       {nodes.map((n) => {
         const col = nodeColor(n.id);
         const r = dotR(n.id);
