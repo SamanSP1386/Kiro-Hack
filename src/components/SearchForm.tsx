@@ -1,9 +1,10 @@
-import type { FormEvent } from "react";
+import type { FormEvent, RefObject } from "react";
 
 interface SearchFormProps {
   value: string;
   onChange: (value: string) => void;
   onSubmit: () => void;
+  textareaRef?: RefObject<HTMLTextAreaElement>;
 }
 
 const SAMPLE_PROMPTS = [
@@ -12,7 +13,7 @@ const SAMPLE_PROMPTS = [
   "I'm overwhelmed and falling behind in class.",
 ];
 
-export function SearchForm({ value, onChange, onSubmit }: SearchFormProps) {
+export function SearchForm({ value, onChange, onSubmit, textareaRef }: SearchFormProps) {
   function handleSubmit(e: FormEvent) {
     e.preventDefault();
     onSubmit();
@@ -25,22 +26,24 @@ export function SearchForm({ value, onChange, onSubmit }: SearchFormProps) {
       <label
         htmlFor="situation-input"
         className="block text-xs font-semibold uppercase tracking-[0.15em] mb-2"
-        style={{ color: "#94a3b8" }}
+        style={{ color: "#cbd5e1" }}
       >
         Describe your situation
       </label>
 
       {/* Textarea */}
       <textarea
+        ref={textareaRef}
         id="situation-input"
         className="w-full rounded-xl p-4 text-sm resize-none backdrop-blur-sm
           transition-all duration-200
           focus:outline-none"
         style={{
-          background: "rgba(255,255,255,0.07)",
-          border: "1px solid rgba(255,255,255,0.13)",
-          color: "#e2e8f0",
-          caretColor: "#60a5fa",
+          background: "rgba(255,255,255,0.08)",
+          border: "1px solid rgba(255,255,255,0.18)",
+          color: "#f1f5f9",
+          caretColor: "#22d3ee",
+          colorScheme: "dark",
         }}
         onFocus={(e) => {
           e.currentTarget.style.border = "1px solid rgba(96,165,250,0.55)";

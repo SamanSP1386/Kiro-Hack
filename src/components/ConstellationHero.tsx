@@ -1,21 +1,16 @@
 /**
  * ConstellationHero.tsx
  *
- * Full-screen hero for PolyCare.
- * Sits at the top of the single continuous page.
- * isExiting → triggers heroExit animation before search section reveals.
+ * Full-viewport hero. Navbar buttons have distinct destinations.
+ * "support" word uses a solid accent color — no gradient text blur.
  */
 
 interface ConstellationHeroProps {
   onStartMatching: () => void;
-  isExiting: boolean;
+  onGoResources:   () => void;
+  onGoSupport:     () => void;
+  isExiting:       boolean;
 }
-
-const NAV_LINKS = [
-  { label: "How it works", href: "#how-it-works" },
-  { label: "Resources",    href: "#resources"    },
-  { label: "Support",      href: "#support"      },
-] as const;
 
 interface Pill { id: string; icon: string; label: string; }
 const PILLS: Pill[] = [
@@ -27,11 +22,24 @@ const PILLS: Pill[] = [
   { id: "emergency", icon: "🤝", label: "Emergency Aid" },
 ];
 
-export default function ConstellationHero({ onStartMatching, isExiting }: ConstellationHeroProps) {
+export default function ConstellationHero({
+  onStartMatching,
+  onGoResources,
+  onGoSupport,
+  isExiting,
+}: ConstellationHeroProps) {
+
+  const navBtnClass = `
+    px-4 py-2 rounded-lg text-sm font-medium
+    transition-colors duration-200
+    hover:text-white hover:bg-white/[0.09]
+    focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-400
+  `;
+
   return (
     <section
       aria-label="PolyCare hero"
-      className={`relative min-h-screen w-full flex flex-col overflow-hidden
+      className={`relative w-full min-h-screen flex flex-col
         ${isExiting ? "hero-exiting pointer-events-none" : ""}`}
     >
       {/* ── Nav ── */}
@@ -44,140 +52,119 @@ export default function ConstellationHero({ onStartMatching, isExiting }: Conste
         </span>
 
         <ul className="hidden sm:flex items-center gap-1" role="list">
-          {NAV_LINKS.map((link) => (
-            <li key={link.href}>
-              <a
-                href={link.href}
-                className="px-4 py-2 rounded-lg text-sm font-medium text-white/60
-                  transition-colors duration-200
-                  hover:text-white hover:bg-white/[0.08]
-                  focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-400"
-              >
-                {link.label}
-              </a>
-            </li>
-          ))}
+          <li>
+            <button type="button" onClick={onStartMatching} className={navBtnClass} style={{ color: "#cbd5e1" }}>
+              Match
+            </button>
+          </li>
+          <li>
+            <button type="button" onClick={onGoResources} className={navBtnClass} style={{ color: "#cbd5e1" }}>
+              Resources
+            </button>
+          </li>
+          <li>
+            <button type="button" onClick={onGoSupport} className={navBtnClass} style={{ color: "#cbd5e1" }}>
+              Support
+            </button>
+          </li>
         </ul>
+
+        {/* Mobile nav */}
+        <div className="flex sm:hidden items-center gap-1">
+          <button type="button" onClick={onStartMatching} className="px-3 py-1.5 rounded-lg text-xs font-medium text-white/70 hover:text-white hover:bg-white/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-400">
+            Match
+          </button>
+        </div>
       </nav>
 
       {/* ── Hero body ── */}
-      <div className="relative z-10 flex flex-1 flex-col items-center justify-center px-6 pb-24 pt-6 text-center">
+      <div className="relative z-10 flex flex-1 flex-col items-center justify-center px-6 pb-16 pt-4 text-center">
 
         {/* Eyebrow */}
         <div
           className="fade-up mb-7 inline-flex items-center gap-2 rounded-full px-4 py-1.5
             text-xs font-semibold uppercase tracking-[0.18em]
-            border border-white/[0.12] bg-white/[0.07] backdrop-blur-sm"
-          style={{ color: "#93c5fd" }}
+            border border-white/[0.10] bg-white/[0.06] backdrop-blur-sm"
+          style={{ color: "#8bb8d0" }}
         >
-          <span aria-hidden="true" className="w-1.5 h-1.5 rounded-full bg-blue-400 inline-block" />
+          <span aria-hidden="true" className="w-1.5 h-1.5 rounded-full inline-block" style={{ background: "#67b8c8" }} />
           Cal Poly Student Support
         </div>
 
-        {/* Headline */}
+        {/* Headline
+            FIX: "support" uses a solid color, not gradient text.
+            Gradient text (WebkitTextFillColor: transparent) causes subpixel
+            blur on some browsers when inside a backdrop-blur ancestor.
+            Solid #7eb8e8 is crisp, readable, and visually distinct. */}
         <h1
           className="fade-up delay-1 max-w-3xl text-white"
           style={{
-            fontSize: "clamp(2.5rem, 6.5vw, 4.2rem)",
+            fontSize: "clamp(2.4rem, 6.5vw, 4rem)",
             fontWeight: 900,
-            lineHeight: 1.04,
+            lineHeight: 1.05,
             letterSpacing: "-0.035em",
           }}
         >
           Find the right campus{" "}
-          <span
-            style={{
-              background: "linear-gradient(100deg, #60a5fa 0%, #818cf8 45%, #c084fc 100%)",
-              WebkitBackgroundClip: "text",
-              WebkitTextFillColor: "transparent",
-              backgroundClip: "text",
-            }}
-          >
-            support
-          </span>
+          <span style={{ color: "#7eb8e8" }}>support</span>
           {", "}
           <span style={{ color: "#e2e8f0" }}>faster.</span>
         </h1>
 
         {/* Subtext */}
         <p
-          className="fade-up delay-2 mt-7 max-w-lg leading-[1.8] sm:text-lg"
-          style={{ fontSize: "clamp(0.95rem, 2vw, 1.1rem)", color: "#94a3b8" }}
+          className="fade-up delay-2 mt-6 max-w-lg leading-[1.8]"
+          style={{ fontSize: "clamp(0.95rem, 2vw, 1.05rem)", color: "#94a3b8" }}
         >
           Describe what you're going through — in your own words.{" "}
-          <span style={{ color: "#e2e8f0", fontWeight: 500 }}>PolyCare</span>{" "}
+          <span style={{ color: "#cbd5e1", fontWeight: 600 }}>PolyCare</span>{" "}
           matches you with the campus resources that can actually help.
         </p>
 
-        {/* Single CTA */}
-        <div className="fade-up delay-3 mt-11">
+        {/* CTA */}
+        <div className="fade-up delay-3 mt-10">
           <button
             type="button"
             onClick={onStartMatching}
             className="
               group inline-flex items-center gap-2.5 rounded-full
               px-8 py-3.5 text-sm font-semibold text-white
-              transition-all duration-[220ms] cubic-bezier(0.22,1,0.36,1)
+              transition-all duration-200
+              hover:-translate-y-[3px] active:translate-y-0 active:scale-[0.97]
               focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-300
               focus-visible:ring-offset-2 focus-visible:ring-offset-transparent
-              hover:-translate-y-[3px] active:translate-y-0 active:scale-[0.97]
             "
             style={{
-              background: "linear-gradient(135deg, #3b82f6 0%, #6366f1 100%)",
-              boxShadow: "0 4px 24px rgba(99,102,241,0.45), 0 1px 4px rgba(0,0,0,0.3)",
+              background: "linear-gradient(135deg, #2d6abf 0%, #4a52a8 100%)",
+              boxShadow: "0 4px 20px rgba(60,80,180,0.35)",
             }}
-            onMouseEnter={(e) => {
-              (e.currentTarget as HTMLButtonElement).style.boxShadow =
-                "0 8px 32px rgba(99,102,241,0.60), 0 2px 8px rgba(0,0,0,0.3)";
-            }}
-            onMouseLeave={(e) => {
-              (e.currentTarget as HTMLButtonElement).style.boxShadow =
-                "0 4px 24px rgba(99,102,241,0.45), 0 1px 4px rgba(0,0,0,0.3)";
-            }}
+            onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.boxShadow = "0 8px 28px rgba(60,80,180,0.50)"; }}
+            onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.boxShadow = "0 4px 20px rgba(60,80,180,0.35)"; }}
           >
             Start matching
-            <svg
-              width="15" height="15" viewBox="0 0 15 15" fill="none"
-              aria-hidden="true"
-              className="transition-transform duration-200 group-hover:translate-x-1"
-            >
-              <path d="M2.5 7.5h10M9 3.5l4 4-4 4"
-                stroke="currentColor" strokeWidth="1.8"
-                strokeLinecap="round" strokeLinejoin="round" />
+            <svg width="15" height="15" viewBox="0 0 15 15" fill="none" aria-hidden="true"
+              className="transition-transform duration-200 group-hover:translate-x-1">
+              <path d="M2.5 7.5h10M9 3.5l4 4-4 4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
           </button>
         </div>
 
         {/* Resource pills */}
-        <div
-          className="fade-up delay-4 mt-14 flex flex-wrap justify-center gap-2"
-          aria-label="Supported resource types"
-        >
+        <div className="fade-up delay-4 mt-12 flex flex-wrap justify-center gap-2" aria-label="Supported resource types">
           {PILLS.map((pill) => (
             <span
               key={pill.id}
               className="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5
                 text-xs font-medium backdrop-blur-sm
-                border border-white/[0.09] bg-white/[0.05]
+                border border-white/[0.09] bg-white/[0.04]
                 transition-colors duration-150
-                hover:bg-white/[0.10] hover:border-white/[0.15]"
+                hover:bg-white/[0.09] hover:border-white/[0.16]"
               style={{ color: "#94a3b8" }}
             >
               <span aria-hidden="true">{pill.icon}</span>
               {pill.label}
             </span>
           ))}
-        </div>
-
-        {/* Scroll cue */}
-        <div className="fade-up delay-5 mt-16 flex flex-col items-center gap-2" aria-hidden="true">
-          <span className="text-[10px] tracking-[0.22em] uppercase" style={{ color: "rgba(148,163,184,0.4)" }}>
-            Scroll
-          </span>
-          <svg width="16" height="20" viewBox="0 0 16 20" fill="none" style={{ color: "rgba(148,163,184,0.3)" }}>
-            <rect x="1" y="1" width="14" height="18" rx="7" stroke="currentColor" strokeWidth="1.2" />
-            <circle cx="8" cy="6" r="2" fill="currentColor" />
-          </svg>
         </div>
       </div>
     </section>
