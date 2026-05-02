@@ -1,20 +1,20 @@
 /**
  * aiMatcher.ts
  *
- * OpenRouter-powered resource matching for PolyCare.
+ * AI-powered resource matching using Groq API.
  *
- * Improvements over v1:
- *  - Uses google/gemini-flash-1.5 (free, much better instruction following)
- *  - Resource list is embedded in the system prompt, not the user message
- *  - JSON is extracted via regex fallback in case the model adds prose around it
- *  - Prompt is tighter and more directive
- *  - Falls back to keyword matcher on any failure
+ * Why Groq:
+ *   - Free tier: 14,400 requests/day, no credit card required
+ *   - No user login popup
+ *   - ~200-400ms response time (very fast)
+ *   - OpenAI-compatible API format
+ *   - Model: llama-3.3-70b-versatile (free, excellent instruction following)
+ *
+ * Falls back to keyword matcher on any failure.
  */
 
 import { resources } from "../data/resources";
 import type { MatchedResource } from "../types/resource";
-
-// ── Types ────────────────────────────────────────────────────────────────────
 
 interface AIMatch {
   id: string;
@@ -25,63 +25,47 @@ interface AIResponse {
   matches: AIMatch[];
 }
 
-// ── Valid resource IDs (used to validate model output) ───────────────────────
-
 const VALID_IDS = new Set(resources.map((r) => r.id));
-
-// ── Build the resource catalogue string for the system prompt ────────────────
 
 function buildCatalogue(): string {
   return resources
     .map(
       (r) =>
-        `ID: ${r.id}
-Name: ${r.name}
-Category: ${r.category}
-Best for: ${r.best_for}
-What to do first: ${r.what_to_do_first}
-Hours: ${r.hours} | Location: ${r.location}`
+        `ID: ${r.id} | Name: ${r.name} | Category: ${r.category} | Best for: ${r.best_for}`
     )
-    .join("\n\n");
+    .join("\n");
 }
 
-// ── System prompt ────────────────────────────────────────────────────────────
+const SYSTEM_PROMPT = `You are a Cal Poly SLO student support assistant. Your job is to match a student's campus-related problem to the right support resources.
 
-function buildSystemPrompt(): string {
-  return `You are a Cal Poly SLO student support assistant. Match the student's problem to the most relevant resources from this exact list. Do not invent resources.
-
-AVAILABLE RESOURCES:
+RESOURCES:
 ${buildCatalogue()}
 
-MATCHING RULES:
-- Academic problems (failing, homework, math, studying, grades, exams) → use "tutoring-center" or "academic-advising"
-- Mental health (stress, anxiety, overwhelmed, depression, burnout) → use "counseling-services"
-- Food/money for food → use "food-pantry"
-- Financial emergency (rent, bills, can't afford) → use "emergency-grant"
-- Housing problems → use "housing-support"
-- Laptop/computer/tech issues → use "laptop-loan" or "it-help-desk"
-- Disability/accommodations → use "disability-services"
-- Career/interview/job → use "career-closet"
-- Multiple urgent needs / don't know where to start → use "basic-needs-office"
-- Crisis / self-harm / suicidal → ALWAYS include "crisis-hotline"
+MATCHING RULES (follow strictly):
+- Math, studying, homework, failing, grades, exams → tutoring-center or academic-advising
+- Stress, anxiety, overwhelmed, mental health, burnout → counseling-services
+- Food, groceries, hungry, can't afford food → food-pantry
+- Rent, bills, financial emergency, can't pay → emergency-grant
+- Housing, homeless, eviction, nowhere to stay → housing-support
+- Laptop broken, no computer, tech issues → laptop-loan or it-help-desk
+- Accommodations, disability, ADHD → disability-services
+- Interview, career fair, job, resume → career-closet
+- Multiple problems, don't know where to start → basic-needs-office
+- Crisis, self-harm, suicidal → ALWAYS include crisis-hotline
 
-INSTRUCTIONS:
-1. Pick the 3 resources whose category best matches the student's actual problem.
-2. For each, write one warm sentence (under 20 words) explaining why it helps THIS student.
-3. Output ONLY valid JSON. No markdown, no explanation, no extra text before or after.
+IMPORTANT:
+- Only match resources that genuinely apply to the student's situation.
+- If the message is not related to any campus support need (e.g. jokes, random words, nonsense, non-student topics), return an empty matches array: {"matches":[]}
+- Never stretch or invent a connection just to return results.
+- Do not return more than 3 matches.
 
-OUTPUT FORMAT:
-{"matches":[{"id":"RESOURCE_ID","reason":"Warm sentence."},{"id":"RESOURCE_ID","reason":"Warm sentence."},{"id":"RESOURCE_ID","reason":"Warm sentence."}]}`;
-}
-
-// ── Extract JSON from model output (handles prose wrapping) ──────────────────
+Return ONLY this JSON, no other text:
+{"matches":[{"id":"ID_HERE","reason":"One warm sentence."},{"id":"ID_HERE","reason":"One warm sentence."},{"id":"ID_HERE","reason":"One warm sentence."}]}`;
 
 function extractJSON(raw: string): AIResponse | null {
-  // Try direct parse first
   try {
     return JSON.parse(raw) as AIResponse;
   } catch {
-    // Try to find a JSON object anywhere in the string
     const match = raw.match(/\{[\s\S]*"matches"[\s\S]*\}/);
     if (match) {
       try {
@@ -94,23 +78,14 @@ function extractJSON(raw: string): AIResponse | null {
   }
 }
 
-// ── Main function ────────────────────────────────────────────────────────────
-
-/**
- * Calls OpenRouter to get AI-powered resource matches for the student's input.
- * Returns null on any error so the caller falls back to keyword matching silently.
- *
- * @param userInput - The student's free-text problem description
- * @param timeoutMs - Max ms to wait for the API response (default 10s)
- */
 export async function findResourcesWithAI(
   userInput: string,
   timeoutMs = 10000
 ): Promise<MatchedResource[] | null> {
-  const apiKey = import.meta.env.VITE_OPENROUTER_API_KEY as string | undefined;
+  const apiKey = import.meta.env.VITE_GROQ_API_KEY as string | undefined;
 
   if (!apiKey) {
-    console.warn("[aiMatcher] No VITE_OPENROUTER_API_KEY — skipping AI match");
+    console.warn("[aiMatcher] No VITE_GROQ_API_KEY found — falling back to keyword matcher");
     return null;
   }
 
@@ -118,24 +93,21 @@ export async function findResourcesWithAI(
   const timeout = setTimeout(() => controller.abort(), timeoutMs);
 
   try {
-    const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+    const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
       method: "POST",
       signal: controller.signal,
       headers: {
         "Authorization": `Bearer ${apiKey}`,
         "Content-Type": "application/json",
-        "HTTP-Referer": "https://polycare.app",
-        "X-Title": "PolyCare",
       },
       body: JSON.stringify({
-        // meta-llama/llama-3.1-8b-instruct:free is confirmed free and available on OpenRouter
-        model: "meta-llama/llama-3.1-8b-instruct:free",
+        model: "llama-3.3-70b-versatile",  // free on Groq, 14,400 req/day
         messages: [
-          { role: "system", content: buildSystemPrompt() },
+          { role: "system", content: SYSTEM_PROMPT },
           { role: "user",   content: userInput },
         ],
-        temperature: 0.2,  // low = consistent, structured output
-        max_tokens: 400,
+        temperature: 0.2,
+        max_tokens: 300,
       }),
     });
 
@@ -143,31 +115,38 @@ export async function findResourcesWithAI(
 
     if (!response.ok) {
       const body = await response.text().catch(() => "");
-      console.warn(`[aiMatcher] API error ${response.status}:`, body);
+      console.warn(`[aiMatcher] Groq API error ${response.status}:`, body);
       return null;
     }
 
     const data = await response.json();
     const raw: string = data?.choices?.[0]?.message?.content ?? "";
 
+    console.log("[aiMatcher] Raw response:", raw);
+
     if (!raw) {
-      console.warn("[aiMatcher] Empty response from model");
+      console.warn("[aiMatcher] Empty response from Groq");
       return null;
     }
 
     const parsed = extractJSON(raw);
 
-    if (!parsed || !Array.isArray(parsed.matches) || parsed.matches.length === 0) {
+    if (!parsed || !Array.isArray(parsed.matches)) {
       console.warn("[aiMatcher] Could not parse matches from:", raw);
       return null;
     }
 
-    // Map IDs → full resource objects, filtering out any hallucinated IDs
+    // Empty matches = AI decided input isn't campus-related → fall back to keyword matcher
+    if (parsed.matches.length === 0) {
+      console.log("[aiMatcher] AI returned no matches — input not campus-related");
+      return null;
+    }
+
     const matched: MatchedResource[] = [];
 
     for (const match of parsed.matches.slice(0, 3)) {
       if (!match.id || !VALID_IDS.has(match.id)) {
-        console.warn(`[aiMatcher] Ignoring unknown ID: "${match.id}"`);
+        console.warn(`[aiMatcher] Unknown ID: "${match.id}"`);
         continue;
       }
       const resource = resources.find((r) => r.id === match.id)!;
@@ -180,7 +159,7 @@ export async function findResourcesWithAI(
     }
 
     if (matched.length === 0) {
-      console.warn("[aiMatcher] No valid IDs in model response");
+      console.warn("[aiMatcher] No valid IDs in response");
       return null;
     }
 

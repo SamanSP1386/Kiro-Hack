@@ -170,8 +170,21 @@ export default function App() {
         // AI succeeded — use its results
         setResults(aiResults);
         setIsFallback(false);
+      } else if (aiResults !== null) {
+        // AI returned empty array — input wasn't campus-related
+        // Still try keyword matcher as a last resort
+        const keywordResults = findResources(input);
+        const allFallback = keywordResults.every((r) => r.score === 0);
+        if (allFallback) {
+          // Nothing matched at all — show empty results with a message
+          setResults([]);
+          setIsFallback(false);
+        } else {
+          setResults(keywordResults);
+          setIsFallback(false);
+        }
       } else {
-        // AI failed or unavailable — fall back to keyword matcher silently
+        // AI failed/unavailable — fall back to keyword matcher silently
         const keywordResults = findResources(input);
         const allFallback = keywordResults.every((r) => r.score === 0);
         setResults(keywordResults);
