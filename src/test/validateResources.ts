@@ -16,6 +16,9 @@ import { resources } from "../data/resources";
 import { FALLBACK_RESOURCE_IDS } from "../data/expectedResults";
 import type { ResourceCategory, UrgencyLevel } from "../types/resource";
 
+// Minimal local declaration so process.exitCode type-checks without @types/node.
+declare const process: { exitCode: number };
+
 // ── Valid value sets (mirrors types/resource.ts) ─────────────────────────────
 
 const VALID_CATEGORIES = new Set<ResourceCategory>([
@@ -109,4 +112,4 @@ console.log(`RESULT: ${passed} passed, ${failed} failed`);
 console.log(failed === 0 ? "✅ PASS" : "❌ FAIL");
 console.log("=".repeat(60));
 
-if (failed > 0) process.exit(1);
+if (failed > 0) process.exitCode = 1;

@@ -18,6 +18,7 @@
 import { resources } from "../data/resources";
 import keywordMap from "../data/keywordMap.json";
 import { FALLBACK_RESOURCE_IDS } from "../data/expectedResults";
+import { normalizeText } from "./normalizeText";
 import type { Resource, MatchedResource, ResourceCategory } from "../types/resource";
 
 // ── Constants ────────────────────────────────────────────────────────────────
@@ -44,20 +45,6 @@ const categoryToResourceCategories: Record<string, ResourceCategory[]> = {
   career:          ["career"],
   "basic-needs":   ["basic-needs", "food", "financial", "housing"],
 };
-
-// ── Step 1: Normalize ────────────────────────────────────────────────────────
-
-/**
- * Lowercases, strips punctuation, collapses whitespace, and trims.
- * All matching runs against this output — never against raw input.
- */
-function normalizeText(text: string): string {
-  return text
-    .toLowerCase()
-    .replace(/[^a-z0-9\s]/g, "")
-    .replace(/\s+/g, " ")
-    .trim();
-}
 
 // ── Step 2: Detect categories ────────────────────────────────────────────────
 

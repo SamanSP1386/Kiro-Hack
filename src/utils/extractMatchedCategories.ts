@@ -6,7 +6,7 @@
  */
 
 import { normalizeText } from "./normalizeText";
-import { keywordMap } from "./keywordMap";
+import keywordMap from "../data/keywordMap.json";
 
 /**
  * Takes a raw user query, normalizes it, then scans each category's keyword
@@ -24,10 +24,12 @@ export function extractMatchedCategories(query: string): string[] {
   const matched: string[] = [];
 
   // Step 3: loop over every category and its keyword list
-  for (const [category, keywords] of Object.entries(keywordMap)) {
+  for (const [category, keywords] of Object.entries(
+    keywordMap as Record<string, string[]>
+  )) {
     // Step 4: check if any keyword appears in the normalized input
     for (const keyword of keywords) {
-      if (normalized.includes(keyword)) {
+      if (normalized.includes(keyword.toLowerCase())) {
         // Step 5: add the category once and move on to the next category
         matched.push(category);
         break;

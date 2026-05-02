@@ -17,6 +17,9 @@
 import { findResources } from "../utils/matcher";
 import { expectedMatchTests } from "../data/expectedResults";
 
+// Minimal local declaration so process.exitCode type-checks without @types/node.
+declare const process: { exitCode: number };
+
 // ── Run tests ────────────────────────────────────────────────────────────────
 
 let passed = 0;
