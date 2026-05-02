@@ -1,0 +1,368 @@
+[
+  {
+    "id": "food-pantry",
+    "name": "Campus Food Pantry",
+    "category": "food",
+    "tags": [
+      "food",
+      "groceries",
+      "hungry",
+      "meal",
+      "meals",
+      "basic needs",
+      "money",
+      "low income",
+      "can't afford food"
+    ],
+    "description": "Provides free groceries and basic supplies for students facing food insecurity.",
+    "best_for": "Students who need food support this week or are skipping meals because of money.",
+    "urgency": "high",
+    "what_to_do_first": "Check pantry hours and bring your student ID.",
+    "what_to_prepare": ["Student ID"],
+    "appointment_required": false,
+    "contact_method": "In person or online information page",
+    "hours": "Mon-Fri, 10:00 AM–4:00 PM",
+    "location": "Student Support Center",
+    "backup_options": ["Emergency Grant Program", "Basic Needs Office"]
+  },
+  {
+    "id": "basic-needs-office",
+    "name": "Basic Needs Office",
+    "category": "basic-needs",
+    "tags": [
+      "food",
+      "housing",
+      "money",
+      "basic needs",
+      "emergency",
+      "struggling",
+      "can't afford",
+      "support",
+      "resources"
+    ],
+    "description": "Connects students with food, housing, emergency funding, and other essential support services.",
+    "best_for": "Students facing multiple urgent life needs who are not sure where to start.",
+    "urgency": "high",
+    "what_to_do_first": "Schedule a meeting or visit during drop-in hours to explain your situation.",
+    "what_to_prepare": ["Student ID", "Short summary of your situation"],
+    "appointment_required": false,
+    "contact_method": "Email, phone, or in person",
+    "hours": "Mon-Fri, 9:00 AM–5:00 PM",
+    "location": "Student Services Building",
+    "backup_options": ["Campus Food Pantry", "Emergency Grant Program"]
+  },
+  {
+    "id": "emergency-grant",
+    "name": "Emergency Grant Program",
+    "category": "financial",
+    "tags": [
+      "money",
+      "financial emergency",
+      "rent",
+      "bills",
+      "unexpected expense",
+      "urgent",
+      "can't pay",
+      "emergency funding",
+      "fees"
+    ],
+    "description": "Offers limited short-term financial support for students facing unexpected emergencies.",
+    "best_for": "Students with urgent financial problems such as rent, medical costs, or sudden loss of income.",
+    "urgency": "high",
+    "what_to_do_first": "Review eligibility requirements and submit an emergency funding request.",
+    "what_to_prepare": [
+      "Student ID",
+      "Brief explanation of the emergency",
+      "Supporting documents if available"
+    ],
+    "appointment_required": false,
+    "contact_method": "Online form or financial aid office",
+    "hours": "Applications reviewed during business hours",
+    "location": "Financial Aid Office / Online Portal",
+    "backup_options": ["Basic Needs Office", "Financial Aid Advising"]
+  },
+  {
+    "id": "counseling-services",
+    "name": "Counseling and Psychological Services",
+    "category": "mental-health",
+    "tags": [
+      "stress",
+      "anxiety",
+      "depression",
+      "overwhelmed",
+      "mental health",
+      "burnout",
+      "panic",
+      "sad",
+      "lonely",
+      "counseling",
+      "therapy"
+    ],
+    "description": "Provides counseling, crisis support, and mental health resources for students.",
+    "best_for": "Students experiencing emotional distress, anxiety, burnout, or ongoing mental health concerns.",
+    "urgency": "high",
+    "what_to_do_first": "Call or visit to schedule an intake appointment. If urgent, ask for crisis support immediately.",
+    "what_to_prepare": [
+      "Student ID",
+      "A short description of how you've been feeling"
+    ],
+    "appointment_required": true,
+    "contact_method": "Phone, online portal, or in person",
+    "hours": "Mon-Fri, 8:00 AM–5:00 PM",
+    "location": "Health and Counseling Center",
+    "backup_options": ["Academic Advising", "24/7 Crisis Support Line"]
+  },
+  {
+    "id": "crisis-hotline",
+    "name": "24/7 Crisis Support Line",
+    "category": "mental-health",
+    "tags": [
+      "crisis",
+      "suicidal",
+      "unsafe",
+      "panic attack",
+      "mental health emergency",
+      "urgent help",
+      "alone",
+      "desperate",
+      "emergency"
+    ],
+    "description": "Immediate crisis support for students who need urgent emotional help outside normal office hours.",
+    "best_for": "Students in immediate emotional crisis or who feel unsafe.",
+    "urgency": "high",
+    "what_to_do_first": "Call immediately if you feel unsafe or need urgent support.",
+    "what_to_prepare": [],
+    "appointment_required": false,
+    "contact_method": "Phone",
+    "hours": "24/7",
+    "location": "Remote",
+    "backup_options": [
+      "Counseling and Psychological Services",
+      "Campus Health Center"
+    ]
+  },
+  {
+    "id": "tutoring-center",
+    "name": "Tutoring and Learning Center",
+    "category": "academic",
+    "tags": [
+      "tutoring",
+      "failing",
+      "behind",
+      "class",
+      "homework",
+      "study help",
+      "academic support",
+      "exam",
+      "grades",
+      "learning",
+      "study"
+    ],
+    "description": "Provides tutoring, study support, and academic skill-building for students across subjects.",
+    "best_for": "Students who are struggling in class, behind on coursework, or preparing for exams.",
+    "urgency": "medium",
+    "what_to_do_first": "Check available tutoring sessions and book the earliest one that fits your class.",
+    "what_to_prepare": [
+      "Course name",
+      "Assignment or notes",
+      "Specific topics you need help with"
+    ],
+    "appointment_required": true,
+    "contact_method": "Online booking or in person",
+    "hours": "Mon-Fri, 9:00 AM–7:00 PM",
+    "location": "Library Learning Commons",
+    "backup_options": ["Office Hours Support", "Academic Advising"]
+  },
+  {
+    "id": "academic-advising",
+    "name": "Academic Advising",
+    "category": "academic",
+    "tags": [
+      "advising",
+      "schedule",
+      "registration",
+      "class planning",
+      "behind",
+      "academic probation",
+      "major requirements",
+      "graduation",
+      "withdrawal",
+      "confused",
+      "dropping class"
+    ],
+    "description": "Helps students make academic plans, understand requirements, and respond to academic difficulties.",
+    "best_for": "Students unsure what to do about academic standing, course planning, registration, or falling behind.",
+    "urgency": "medium",
+    "what_to_do_first": "Schedule an advising appointment and bring your main questions or concerns.",
+    "what_to_prepare": [
+      "Student ID",
+      "Course list",
+      "Questions about your situation"
+    ],
+    "appointment_required": true,
+    "contact_method": "Online booking, email, or in person",
+    "hours": "Mon-Fri, 8:30 AM–5:00 PM",
+    "location": "Academic Success Center",
+    "backup_options": [
+      "Tutoring and Learning Center",
+      "Counseling and Psychological Services"
+    ]
+  },
+  {
+    "id": "laptop-loan",
+    "name": "Laptop and Technology Loan Program",
+    "category": "technology",
+    "tags": [
+      "laptop",
+      "computer",
+      "device",
+      "technology",
+      "broken laptop",
+      "wifi",
+      "can't access class",
+      "hardware",
+      "borrow laptop",
+      "no computer"
+    ],
+    "description": "Provides temporary access to laptops and other technology for students with equipment barriers.",
+    "best_for": "Students whose laptop broke, who do not own a device, or who cannot access coursework because of tech issues.",
+    "urgency": "high",
+    "what_to_do_first": "Check device availability and submit a loan request as soon as possible.",
+    "what_to_prepare": [
+      "Student ID",
+      "Short explanation of your technology need"
+    ],
+    "appointment_required": false,
+    "contact_method": "Library desk or online request form",
+    "hours": "Mon-Fri, 8:00 AM–6:00 PM",
+    "location": "University Library",
+    "backup_options": ["IT Help Desk", "Basic Needs Office"]
+  },
+  {
+    "id": "housing-support",
+    "name": "Student Housing Support Services",
+    "category": "housing",
+    "tags": [
+      "housing",
+      "homeless",
+      "rent",
+      "roommate problem",
+      "eviction",
+      "nowhere to stay",
+      "temporary housing",
+      "unsafe housing",
+      "move out",
+      "kicked out"
+    ],
+    "description": "Supports students dealing with housing instability, unsafe living situations, or emergency housing needs.",
+    "best_for": "Students who may lose housing, feel unsafe where they live, or need help finding temporary options.",
+    "urgency": "high",
+    "what_to_do_first": "Contact the office immediately and explain whether your need is urgent or safety-related.",
+    "what_to_prepare": [
+      "Student ID",
+      "Short summary of housing issue",
+      "Any deadline or notice if available"
+    ],
+    "appointment_required": false,
+    "contact_method": "Phone, email, or in person",
+    "hours": "Mon-Fri, 9:00 AM–5:00 PM",
+    "location": "Housing Services Center",
+    "backup_options": ["Basic Needs Office", "Emergency Grant Program"]
+  },
+  {
+    "id": "disability-services",
+    "name": "Disability Resource Center",
+    "category": "accessibility",
+    "tags": [
+      "disability",
+      "accommodations",
+      "accessibility",
+      "extended time",
+      "note taking",
+      "mobility",
+      "hearing",
+      "vision",
+      "learning disability",
+      "adhd",
+      "testing accommodations"
+    ],
+    "description": "Provides accommodation support and accessibility resources for students with disabilities or related needs.",
+    "best_for": "Students who need academic or campus accommodations, or who are unsure how to request support.",
+    "urgency": "medium",
+    "what_to_do_first": "Start the accommodation request process and gather any documentation you already have.",
+    "what_to_prepare": [
+      "Student ID",
+      "Medical or educational documentation if available",
+      "List of barriers you're experiencing"
+    ],
+    "appointment_required": true,
+    "contact_method": "Online form, email, or in person",
+    "hours": "Mon-Fri, 8:00 AM–5:00 PM",
+    "location": "Accessibility Services Office",
+    "backup_options": [
+      "Academic Advising",
+      "Counseling and Psychological Services"
+    ]
+  },
+  {
+    "id": "career-closet",
+    "name": "Career Closet and Professional Prep",
+    "category": "career",
+    "tags": [
+      "interview",
+      "professional clothes",
+      "career fair",
+      "job",
+      "internship",
+      "resume",
+      "networking",
+      "professional attire",
+      "career"
+    ],
+    "description": "Provides interview clothing, career prep support, and professional readiness resources.",
+    "best_for": "Students preparing for interviews, career fairs, internships, or networking events.",
+    "urgency": "medium",
+    "what_to_do_first": "Book a visit or stop by to check available clothing and prep resources.",
+    "what_to_prepare": ["Student ID", "Event date if you have one"],
+    "appointment_required": false,
+    "contact_method": "Email or in person",
+    "hours": "Mon-Thu, 10:00 AM–4:00 PM",
+    "location": "Career Services Center",
+    "backup_options": ["Career Advising", "Student Success Center"]
+  },
+  {
+    "id": "it-help-desk",
+    "name": "IT Help Desk",
+    "category": "technology",
+    "tags": [
+      "wifi",
+      "login",
+      "portal",
+      "password",
+      "software",
+      "computer issue",
+      "tech support",
+      "access problem",
+      "canvas",
+      "email issue",
+      "internet"
+    ],
+    "description": "Helps students with technology access, software, login problems, and campus systems.",
+    "best_for": "Students who cannot access online tools, campus accounts, or required software.",
+    "urgency": "medium",
+    "what_to_do_first": "Submit a help ticket or visit the desk with details about the issue.",
+    "what_to_prepare": [
+      "Student ID",
+      "Device if relevant",
+      "Screenshot or error message"
+    ],
+    "appointment_required": false,
+    "contact_method": "Help ticket, phone, or in person",
+    "hours": "Mon-Fri, 8:00 AM–5:00 PM",
+    "location": "Technology Support Center",
+    "backup_options": [
+      "Laptop and Technology Loan Program",
+      "Library Support Desk"
+    ]
+  }
+]
