@@ -109,4 +109,4 @@ console.log(`RESULT: ${passed} passed, ${failed} failed`);
 console.log(failed === 0 ? "✅ PASS" : "❌ FAIL");
 console.log("=".repeat(60));
 
-if (failed > 0) process.exit(1);
+if (failed > 0) throw new Error(`${failed} validation check(s) failed.`);

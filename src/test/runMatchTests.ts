@@ -56,5 +56,5 @@ console.log(`RESULTS: ${passed} passed, ${failed} failed`);
 console.log("=".repeat(60));
 
 if (failed > 0) {
-  process.exitCode = 1;
+  throw new Error(`${failed} test(s) failed.`);
 }
